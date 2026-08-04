@@ -28,6 +28,34 @@
     --gray:#7C8695;
     --gray-soft:#F0EFEC;
     --radius:14px;
+    --sombra:rgba(34,39,46,.08);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#15181D;
+      --surface:#1C2026;
+      --ink:#E8EAED;
+      --ink-2:#B7BEC8;
+      --muted:#8A93A0;
+      --faint:#666E7A;
+      --line:#2A2F37;
+      --line-2:#3A414B;
+      --blue:#6C93F5;
+      --blue-dark:#8AAAFF;
+      --blue-soft:#1E2739;
+      --red:#F0776F;
+      --red-soft:#33211F;
+      --amber:#E0A54A;
+      --amber-soft:#33280F;
+      --green:#4FC08D;
+      --green-soft:#122B21;
+      --gray:#8A93A0;
+      --gray-soft:#252A31;
+      --sombra:rgba(0,0,0,.35);
+    }
+    .n-red{border-color:#4A2C29 !important;color:#F4A9A3 !important;}
+    .n-amber{border-color:#4A3A18 !important;color:#EBC57F !important;}
+    input,select,textarea{color-scheme:dark;}
   }
   *{box-sizing:border-box;}
   html,body{margin:0;}
@@ -314,6 +342,56 @@
   }
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+  /* ---------- novos componentes v2 ---------- */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .kpi .delta{font-size:12px;font-weight:600;margin-top:5px;display:flex;align-items:center;gap:4px;}
+  .up{color:var(--green);} .down{color:var(--red);} .flat{color:var(--faint);}
+  .kpi .delta.neutro{color:var(--muted);font-weight:500;}
+
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;}
+  .box{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
+  .box h3{font-size:13.5px;margin-bottom:12px;}
+  .box .linha{display:flex;justify-content:space-between;gap:12px;font-size:13.5px;padding:6px 0;}
+  .box .linha .k{color:var(--muted);}
+  .box .linha .v{font-weight:600;font-variant-numeric:tabular-nums;}
+
+  .c-purple{background:#F1ECFB;color:#6D4AAE;}
+  @media (prefers-color-scheme:dark){.c-purple{background:#241C36;color:#B79BEE;}}
+
+  .copy-btn{
+    background:none;border:1px solid var(--line-2);color:var(--ink-2);border-radius:8px;
+    font-family:inherit;font-size:12.5px;font-weight:600;padding:5px 11px;cursor:pointer;
+  }
+  .copy-btn:hover{border-color:var(--ink-2);}
+  .ia-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+  .ia-box .h{margin-bottom:0;}
+
+  .batch-info{
+    font-size:13px;color:var(--muted);background:var(--paper);border:1px dashed var(--line-2);
+    border-radius:10px;padding:12px 14px;margin-bottom:14px;line-height:1.55;
+  }
+  .batch-info code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+    background:var(--gray-soft);padding:1px 5px;border-radius:4px;
+  }
+  textarea.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;min-height:110px;}
+  .prev-ok{color:var(--green);font-weight:600;}
+  .prev-erro{color:var(--red);font-weight:600;}
+
+  .head-actions .btn{white-space:nowrap;}
+  .sec-title{
+    font-family:'Sora',sans-serif;font-size:13px;font-weight:600;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.05em;margin:0 0 14px;
+  }
+  .hint{font-size:12.5px;color:var(--faint);margin-top:6px;line-height:1.5;}
+  #toast.err{background:var(--red);}
+
+  kbd{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;
+    border:1px solid var(--line-2);border-bottom-width:2px;border-radius:5px;
+    padding:1px 5px;color:var(--ink-2);background:var(--surface);
+  }
+
   @media (max-width:760px){
     .wrap{padding:30px 18px 90px;}
     .acct-body{grid-template-columns:1fr;gap:18px;}
@@ -366,7 +444,9 @@
         <div class="date" id="hoje"></div>
       </div>
       <div class="head-actions topbar-user">
-        <span class="sub" id="userEmail"></span>
+        <span class="sub hide-sm" id="userEmail"></span>
+        <button class="btn btn-ghost btn-sm" id="btnBackup" title="Baixar uma cópia de tudo em JSON">Backup</button>
+        <button class="btn btn-ghost btn-sm" id="btnRecarregar" title="Recarregar os dados do banco">Atualizar</button>
         <button class="btn btn-ghost btn-sm" id="btnLogout">Sair</button>
       </div>
     </div>
@@ -388,17 +468,27 @@
     <div class="card">
       <div class="card-head">
         <h2>Radar do dia</h2>
-        <span class="sub">o que precisa de você agora</span>
+        <span class="sub">o que precisa de você agora, detectado nos números</span>
       </div>
       <div id="radar"></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <h2>Consolidado da carteira</h2>
+        <span class="sub">últimos 7 dias contra os 7 anteriores</span>
+      </div>
+      <div id="consolidado"></div>
     </div>
     <div class="card">
       <div class="card-head">
         <h2>Leitura da carteira</h2>
         <button class="btn btn-primary btn-sm" id="btnIaCarteira">Analisar tudo</button>
       </div>
-      <p class="sub" style="margin:0;">Cruza status, verbas, tarefas e métricas recentes de todas as contas e devolve as prioridades do dia.</p>
-      <div class="ia-box" id="iaCarteira"><div class="h">Diagnóstico da carteira</div><div id="iaCarteiraTxt"></div></div>
+      <p class="sub" style="margin:0;">Cruza status, verbas, tarefas, alertas e métricas recentes de todas as contas e devolve as prioridades do dia.</p>
+      <div class="ia-box" id="iaCarteira">
+        <div class="ia-head"><div class="h">Diagnóstico da carteira</div><button class="copy-btn" data-copiar="iaCarteiraTxt">Copiar</button></div>
+        <div id="iaCarteiraTxt"></div>
+      </div>
     </div>
   </section>
 
@@ -427,7 +517,8 @@
       <div class="card-head">
         <h2>Saldo e recargas</h2>
       </div>
-      <p class="sub" style="margin:0 0 24px;">Informe o saldo lido no Google Ads e o painel projeta quantos dias faltam pra zerar, usando o ritmo real de gasto. Ao mandar o Pix, registre pelo botão que o saldo é somado sozinho.</p>
+      <p class="sub" style="margin:0 0 24px;">Informe o saldo lido no Google Ads e o painel projeta quantos dias faltam pra zerar. A projeção desconta o gasto que você já lançou desde a data do saldo e só estima os dias sem lançamento, usando o ritmo real dos últimos 7 dias. Ao mandar o Pix, registre pelo botão que o saldo é somado sozinho.</p>
+      <div class="table-wrap">
       <table>
         <thead><tr>
           <th>Conta</th><th>Pagamento</th><th class="t-right">Verba/dia</th>
@@ -436,6 +527,7 @@
         </tr></thead>
         <tbody id="tbVerba"></tbody>
       </table>
+      </div>
       <div class="sub" id="ultimasRecargas" style="margin-top:20px;font-size:13px;"></div>
     </div>
   </section>
@@ -456,8 +548,33 @@
         <label class="field"><span>Conversões</span><input type="number" step="0.1" id="mConv"></label>
       </div>
       <label class="field" style="margin-bottom:22px;"><span>Observação do dia</span><input type="text" id="mObs" placeholder="opcional: o que mudou nesse dia"></label>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
         <button class="btn btn-primary" id="btnLancar">Lançar</button>
+        <span class="hint" style="margin:0;">Lançar o mesmo dia de novo corrige o valor anterior em vez de duplicar.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Lançar vários dias de uma vez</h2>
+        <span class="sub">cole direto do relatório</span>
+      </div>
+      <div class="batch-info">
+        Copie as linhas do relatório do Google Ads (ou do Meta) e cole aqui. Uma linha por dia, na ordem:
+        <code>data · investimento · impressões · cliques · conversões</code>.
+        Aceita separação por tabulação, ponto e vírgula ou dois espaços, datas em <code>dd/mm/aaaa</code>,
+        <code>dd/mm</code> ou <code>aaaa-mm-dd</code>, e números no formato brasileiro (<code>R$ 1.234,56</code>).
+        Colunas faltando no fim viram zero.
+      </div>
+      <div class="grid-form">
+        <label class="field" style="grid-column:span 2;"><span>Conta</span><select id="bConta"></select></label>
+        <label class="field"><span>Plataforma</span><select id="bPlat"><option value="google">Google</option><option value="meta">Meta</option></select></label>
+      </div>
+      <label class="field" style="margin-bottom:16px;"><span>Linhas coladas</span><textarea id="bTexto" class="mono" placeholder="01/08/2026&#9;98,63&#9;134&#9;19&#9;15&#10;02/08/2026&#9;116,13&#9;321&#9;12&#9;4"></textarea></label>
+      <div id="bPreview"></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
+        <button class="btn btn-ghost" id="btnConferir">Conferir</button>
+        <button class="btn btn-primary" id="btnImportar" disabled>Importar</button>
       </div>
     </div>
 
@@ -474,12 +591,18 @@
         <label class="field"><span>Plataforma</span>
           <select id="hPlat"><option value="">Todas</option><option value="google">Google</option><option value="meta">Meta</option></select>
         </label>
-        <div><button class="btn btn-primary" id="btnIaConta" style="width:100%;">Análise IA</button></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" id="btnIaConta" style="flex:1;">Análise IA</button>
+          <button class="btn btn-ghost btn-sm" id="btnIaRelatorio" style="flex:1;" title="Gera um resumo pronto pra mandar ao cliente">Relatório</button>
+        </div>
       </div>
       <div id="stats"></div>
       <div id="charts"></div>
       <div id="tabelaMetricas"></div>
-      <div class="ia-box" id="iaConta"><div class="h">Análise da conta</div><div id="iaContaTxt"></div></div>
+      <div class="ia-box" id="iaConta">
+        <div class="ia-head"><div class="h" id="iaContaTitulo">Análise da conta</div><button class="copy-btn" data-copiar="iaContaTxt">Copiar</button></div>
+        <div id="iaContaTxt"></div>
+      </div>
     </div>
   </section>
 
@@ -492,8 +615,18 @@
         <label class="field"><span>Conta</span><select id="tConta"></select></label>
         <label class="field"><span>Prazo</span><input type="date" id="tPrazo"></label>
         <label class="field"><span>Prioridade</span><select id="tPrio"><option value="alta">Alta</option><option value="media" selected>Média</option><option value="baixa">Baixa</option></select></label>
+        <label class="field"><span>Repetir</span>
+          <select id="tRepetir">
+            <option value="">Não repete</option>
+            <option value="diaria">Todo dia</option>
+            <option value="semanal">Toda semana</option>
+            <option value="quinzenal">A cada 15 dias</option>
+            <option value="mensal">Todo mês</option>
+          </select>
+        </label>
       </div>
       <button class="btn btn-primary" id="btnAddTarefa">Adicionar</button>
+      <div class="hint">Tarefa que repete precisa de prazo. Ao marcar como feita, a próxima é criada sozinha.</div>
     </div>
     <div class="card">
       <div class="card-head"><h2>Pendentes</h2></div>
@@ -539,8 +672,9 @@
   <label class="field"><span>ID conta Meta Ads</span><input type="text" id="fMetaContaId" placeholder="ex: 595473060312437"></label>
   <div class="r2">
     <label class="field"><span>Início da gestão</span><input type="date" id="fInicio"></label>
-    <label class="field"><span>CPA alvo</span><input type="number" step="0.01" id="fCpaAlvo" placeholder="R$"></label>
+    <label class="field"><span>CPA alvo (Google)</span><input type="number" step="0.01" id="fCpaAlvo" placeholder="R$"></label>
   </div>
+  <label class="field"><span>CPA alvo (Meta)</span><input type="number" step="0.01" id="fCpaAlvoMeta" placeholder="deixe vazio pra usar o mesmo do Google"></label>
   <div class="r2">
     <label class="field"><span>Carteira</span><select id="fCarteira"><option>Digital Xpert</option><option>Direto</option></select></label>
     <label class="field"><span>Prioridade</span><select id="fPrio"><option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option></select></label>
@@ -563,8 +697,9 @@
     <label class="field"><span>Forma de pagamento</span><select id="fForma">
       <option value="">Não definido</option><option value="pix">Pix (manual)</option><option value="cartao">Cartão (automático)</option>
     </select></label>
-    <label class="field"><span>Verba diária</span><input type="number" step="0.01" id="fVerba" placeholder="R$"></label>
+    <label class="field"><span>Verba diária Google</span><input type="number" step="0.01" id="fVerba" placeholder="R$"></label>
   </div>
+  <label class="field"><span>Verba diária Meta</span><input type="number" step="0.01" id="fVerbaMeta" placeholder="R$"></label>
   <div class="r2">
     <label class="field"><span>Saldo atual</span><input type="number" step="0.01" id="fSaldo" placeholder="fundos disponíveis"></label>
     <label class="field"><span>Saldo lido em</span><input type="date" id="fSaldoData"></label>
@@ -745,18 +880,33 @@ const STATUS_PLAT={ativa:'Ativa',pausada:'Pausada',limitada:'Limitada',aprendiza
 
 let contas=[],metricas={},tarefas=[],registros=[],recargas=[],resolvidos={};
 let editando=null,filtroPlat='todas',filtroCart='todas',pixAlvo=null,confirmaFn=null;
+let alertas=[];        // recalculado a cada render()
+let loteValido=null;   // linhas conferidas do lançamento em lote
 
 const $=id=>document.getElementById(id);
 const brl=n=>n==null||isNaN(n)?'':Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-const hojeISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+
+/* Datas sempre no fuso local. Usar toISOString() aqui deslocava tudo em um dia
+   depois das 21h no Brasil, porque ela converte pra UTC antes de cortar. */
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const hojeISO=()=>iso(new Date());
+const isoMais=n=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+n);return iso(d);};
+const dataDe=s=>new Date(s+'T12:00:00');   // meio-dia evita virada de dia por fuso
+const diasEntre=(a,b)=>Math.round((dataDe(b)-dataDe(a))/86400000);
+const somaDias=(s,n)=>{const d=dataDe(s);d.setDate(d.getDate()+n);return iso(d);};
+const somaMeses=(s,n)=>{const d=dataDe(s);const dia=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+n);
+  d.setDate(Math.min(dia,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));return iso(d);};
+
 const dBR=s=>s?s.split('-').reverse().join('/'):'';
 const dCurta=s=>s?s.split('-').reverse().slice(0,2).join('/'):'';
 const esc=s=>(s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-function toast(msg){
-  const t=$('toast');t.textContent=msg;t.classList.add('show');
-  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);
+function toast(msg,erro){
+  const t=$('toast');t.textContent=msg;
+  t.classList.toggle('err',!!erro);t.classList.add('show');
+  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),erro?5000:2600);
 }
+const erroToast=msg=>toast(msg,true);
 function pedirConfirmacao(titulo,texto,fn){
   $('confTitulo').textContent=titulo;$('confTexto').textContent=texto;
   confirmaFn=fn;$('ovConfirma').classList.add('open');
@@ -766,31 +916,57 @@ function pedirConfirmacao(titulo,texto,fn){
 const rowToConta=r=>({id:r.id,codigo:r.codigo,cliente:r.cliente,carteira:r.carteira,nicho:r.nicho,praca:r.praca,
   contaId:r.conta_id,metaContaId:r.meta_conta_id,plataformas:r.plataformas||[],status:r.status,
   statusGoogle:r.status_google,statusMeta:r.status_meta,prioridade:r.prioridade,acao:r.acao,notas:r.notas,
-  forma:r.forma,verbaDiaria:r.verba_diaria,saldo:r.saldo,saldoData:r.saldo_data,diaPgto:r.dia_pgto,
-  valorPgto:r.valor_pgto,cpaAlvo:r.cpa_alvo,inicio:r.inicio});
+  forma:r.forma,verbaDiaria:r.verba_diaria,verbaMeta:r.verba_meta,saldo:r.saldo,saldoData:r.saldo_data,
+  diaPgto:r.dia_pgto,valorPgto:r.valor_pgto,cpaAlvo:r.cpa_alvo,cpaAlvoMeta:r.cpa_alvo_meta,inicio:r.inicio});
 const contaToRow=a=>({codigo:a.codigo,cliente:a.cliente,carteira:a.carteira,nicho:a.nicho||null,praca:a.praca||null,
   conta_id:a.contaId||null,meta_conta_id:a.metaContaId||null,plataformas:a.plataformas||[],status:a.status,
   status_google:a.statusGoogle||null,status_meta:a.statusMeta||null,prioridade:a.prioridade,acao:a.acao||null,
-  notas:a.notas||null,forma:a.forma||null,verba_diaria:a.verbaDiaria,saldo:a.saldo,saldo_data:a.saldoData||null,
-  dia_pgto:a.diaPgto,valor_pgto:a.valorPgto,cpa_alvo:a.cpaAlvo,inicio:a.inicio||null});
+  notas:a.notas||null,forma:a.forma||null,verba_diaria:a.verbaDiaria,verba_meta:a.verbaMeta,
+  saldo:a.saldo,saldo_data:a.saldoData||null,dia_pgto:a.diaPgto,valor_pgto:a.valorPgto,
+  cpa_alvo:a.cpaAlvo,cpa_alvo_meta:a.cpaAlvoMeta,inicio:a.inicio||null});
 const rowToMetric=r=>({id:r.id,data:r.data,plat:r.plat,invest:Number(r.invest),impr:r.impr,cliques:r.cliques,conv:Number(r.conv),obs:r.obs});
-const rowToTask=r=>({id:r.id,accId:r.account_id,desc:r.descricao,prazo:r.prazo,prio:r.prioridade,done:r.done,doneEm:r.done_em,criadaEm:r.criada_em});
+const rowToTask=r=>({id:r.id,accId:r.account_id,desc:r.descricao,prazo:r.prazo,prio:r.prioridade,done:r.done,doneEm:r.done_em,criadaEm:r.criada_em,repetir:r.repetir});
 const rowToLog=r=>({id:r.id,accId:r.account_id,data:r.data,texto:r.texto});
 const rowToRecarga=r=>({id:r.id,accId:r.account_id,data:r.data,valor:r.valor});
 
-/* ===================== carregar tudo do banco ===================== */
+/* ===================== carregar tudo do banco =====================
+   O Supabase devolve no máximo 1000 linhas por consulta. Sem paginar, as
+   métricas mais antigas sumiam do painel sem nenhum aviso. */
+async function paginado(tabela,montaQuery){
+  const PAG=1000;let todas=[],de=0;
+  for(;;){
+    let q=sb.from(tabela).select('*').range(de,de+PAG-1);
+    if(montaQuery)q=montaQuery(q);
+    const {data,error}=await q;
+    if(error)return {data:null,error};
+    todas=todas.concat(data);
+    if(data.length<PAG)break;
+    de+=PAG;
+  }
+  return {data:todas,error:null};
+}
+
+let jaSemeou=false;
 async function carregar(){
   const [ac,me,ta,lg,rc,dm]=await Promise.all([
-    sb.from('accounts').select('*').order('codigo'),
-    sb.from('metrics').select('*'),
-    sb.from('tasks').select('*'),
-    sb.from('opt_log').select('*'),
-    sb.from('recargas').select('*'),
-    sb.from('avisos_resolvidos').select('*').eq('data',hojeISO())
+    paginado('accounts',q=>q.order('codigo')),
+    paginado('metrics'),
+    paginado('tasks'),
+    paginado('opt_log'),
+    paginado('recargas'),
+    paginado('avisos_resolvidos',q=>q.eq('data',hojeISO()))
   ]);
-  if(ac.error){toast('Erro ao carregar contas: '+ac.error.message);return;}
+  const falhou=[ac,me,ta,lg,rc,dm].find(r=>r.error);
+  if(falhou){erroToast('Erro ao carregar os dados: '+falhou.error.message);return;}
 
   if(!ac.data.length){
+    // Guarda contra loop infinito: se a semeadura não inserir nada (RLS, erro de
+    // permissão), a chamada recursiva rodaria pra sempre.
+    if(jaSemeou){
+      erroToast('O banco está vazio e a carga inicial não funcionou. Confira se o schema.sql foi rodado no Supabase.');
+      return;
+    }
+    jaSemeou=true;
     await semear();
     return carregar();
   }
@@ -826,6 +1002,31 @@ async function semear(){
 }
 
 /* ===================== cálculos ===================== */
+function linhas(a,plat,de,ate){
+  let rows=metricas[a.id]||[];
+  if(plat)rows=rows.filter(r=>r.plat===plat);
+  if(de)rows=rows.filter(r=>r.data>=de);
+  if(ate)rows=rows.filter(r=>r.data<=ate);
+  return rows.slice().sort((x,y)=>x.data.localeCompare(y.data));
+}
+function agrega(rows){
+  if(!rows||!rows.length)return null;
+  const t=rows.reduce((s,r)=>({i:s.i+(r.invest||0),im:s.im+(r.impr||0),c:s.c+(r.cliques||0),cv:s.cv+(r.conv||0)}),{i:0,im:0,c:0,cv:0});
+  return {invest:t.i,impr:t.im,cliques:t.c,conv:t.cv,
+    cpa:t.cv>0?t.i/t.cv:null,cpc:t.c>0?t.i/t.c:null,ctr:t.im>0?t.c/t.im*100:null,dias:rows.length};
+}
+function periodo(a,plat,diasAtras,ateDiasAtras){
+  return agrega(linhas(a,plat,isoMais(-diasAtras),ateDiasAtras!=null?isoMais(-ateDiasAtras):null));
+}
+const resumo7=(a,plat)=>periodo(a,plat,7);
+
+function alvoCPA(a,plat){
+  if(plat==='meta'&&a.cpaAlvoMeta!=null)return a.cpaAlvoMeta;
+  return a.cpaAlvo;
+}
+function verbaDe(a,plat){return plat==='meta'?a.verbaMeta:a.verbaDiaria;}
+
+/* Ritmo real de gasto no Google: média dos últimos 7 dias lançados. */
 function ritmo(a){
   const rows=(metricas[a.id]||[]).filter(r=>r.plat==='google').slice().sort((x,y)=>y.data.localeCompare(x.data)).slice(0,7);
   if(rows.length>=2){
@@ -834,40 +1035,180 @@ function ritmo(a){
   }
   return a.verbaDiaria?{v:a.verbaDiaria,real:false}:null;
 }
+
+/* Autonomia: desconta o gasto REAL já lançado desde a leitura do saldo e só
+   projeta pelo ritmo os dias que ainda não têm lançamento. A versão anterior
+   projetava todos os dias, o que errava feio em conta com entrega travada. */
 function autonomia(a){
   const r=ritmo(a);
   if(a.saldo==null||!r)return null;
-  const hoje=new Date();hoje.setHours(0,0,0,0);
-  let passados=0;
-  if(a.saldoData){const d=new Date(a.saldoData+'T00:00:00');passados=Math.max(0,Math.round((hoje-d)/86400000));}
-  const restante=Math.max(0,a.saldo-passados*r.v);
+  let gastoReal=0,diasSemDado=0,diasCorridos=0;
+  if(a.saldoData){
+    diasCorridos=Math.max(0,diasEntre(a.saldoData,hojeISO()));
+    const porDia={};
+    (metricas[a.id]||[]).filter(x=>x.plat==='google').forEach(x=>{porDia[x.data]=(porDia[x.data]||0)+(x.invest||0);});
+    for(let i=1;i<=diasCorridos;i++){
+      const d=somaDias(a.saldoData,i);
+      if(porDia[d]!=null)gastoReal+=porDia[d];else diasSemDado++;
+    }
+  }
+  const restante=Math.max(0,a.saldo-gastoReal-diasSemDado*r.v);
   const dias=Math.floor(restante/r.v);
   const nivel=dias<=1?'zero':dias<=3?'critico':dias<=6?'perto':'ok';
-  return {restante,dias,nivel,ritmo:r.v,ritmoReal:r.real,projetado:passados>=2};
+  return {restante,dias,nivel,ritmo:r.v,ritmoReal:r.real,gastoReal,diasSemDado,
+    projetado:diasSemDado>=2,diasCorridos};
 }
 function corNivel(n){return n==='zero'||n==='critico'?'var(--red)':n==='perto'?'var(--amber)':'var(--green)';}
 function tempoDeConta(a){
   if(!a.inicio)return '';
-  const dias=Math.round((new Date()-new Date(a.inicio+'T00:00:00'))/86400000);
+  const dias=diasEntre(a.inicio,hojeISO());
   if(dias<1)return 'começou hoje';
   if(dias<30)return `há ${dias} dias`;
   const m=Math.floor(dias/30);
   return `há ${m} ${m===1?'mês':'meses'}`;
-}
-function resumo7(a,plat){
-  const corte=new Date();corte.setDate(corte.getDate()-7);
-  const ci=corte.toISOString().slice(0,10);
-  let rows=(metricas[a.id]||[]).filter(r=>r.data>=ci);
-  if(plat)rows=rows.filter(r=>r.plat===plat);
-  if(!rows.length)return null;
-  const t=rows.reduce((s,r)=>({i:s.i+r.invest,c:s.c+(r.conv||0)}),{i:0,c:0});
-  return {invest:t.i,conv:t.c,cpa:t.c>0?t.i/t.c:null,dias:rows.length};
 }
 function corCPA(cpa,alvo){
   if(cpa==null)return 'var(--faint)';
   const a=alvo||40;
   return cpa>a*1.5?'var(--red)':cpa>a?'var(--amber)':'var(--green)';
 }
+function ultimoLancamento(a,plat){
+  const rows=(metricas[a.id]||[]).filter(r=>!plat||r.plat===plat);
+  if(!rows.length)return null;
+  return rows.reduce((m,r)=>r.data>m?r.data:m,rows[0].data);
+}
+const nomePlat=p=>p==='google'?'Google':'Meta';
+const contaAtiva=a=>a.status!=='standby';
+
+/* ===================== motor de alertas =====================
+   Lê as métricas e detecta sozinho o que precisa de atenção, em vez de
+   depender só do status que você marcou na mão. Cada alerta tem uma chave
+   estável pra você poder marcar "OK" e ele sumir até o dia seguinte. */
+const SEV={alta:{ordem:0,chip:'c-red'},media:{ordem:1,chip:'c-amber'},baixa:{ordem:2,chip:'c-blue'},info:{ordem:3,chip:'c-gray'}};
+
+function detectarAlertas(){
+  const hoje=hojeISO(),out=[];
+  const add=(chave,sev,tipo,html,accId)=>out.push({chave,sev,tipo,html,accId});
+
+  contas.forEach(a=>{
+    const nome=`<b>${esc(a.cliente)}</b>`;
+
+    /* 1. status marcado como crítico na mão */
+    if(a.status==='critico')
+      add('crit-'+a.id,'alta','crítico',`${nome} · ${esc(a.acao)||'definir a próxima ação'}`,a.id);
+
+    /* 2. saldo acabando em conta no Pix */
+    if(a.forma==='pix'){
+      const r=autonomia(a);
+      if(r&&(r.nivel==='zero'||r.nivel==='critico')){
+        const q=r.dias<=0?'já zerou':(r.dias===1?'zera amanhã':`zera em ${r.dias} dias`);
+        add('pix-'+a.id,'alta','pix',
+          `Pix pendente em ${nome} · R$ ${brl(r.restante)} em caixa, ${q}${a.valorPgto?`. Recarga usual R$ ${brl(a.valorPgto)}`:''}`,a.id);
+      } else if(r&&r.nivel==='perto'){
+        add('pixperto-'+a.id,'media','pix',`${nome} · R$ ${brl(r.restante)} de saldo, dá pra mais ${r.dias} dias`,a.id);
+      }
+    }
+
+    if(!contaAtiva(a))return;
+
+    a.plataformas.forEach(plat=>{
+      const alvo=alvoCPA(a,plat),verba=verbaDe(a,plat);
+      const p5=periodo(a,plat,5),p3=periodo(a,plat,3);
+      const p14=periodo(a,plat,14),ant11=periodo(a,plat,14,3);
+
+      /* 3. gastando sem converter */
+      if(p5&&p5.invest>=50&&p5.conv===0&&p5.dias>=3)
+        add(`semconv-${a.id}-${plat}`,'alta','sem conversão',
+          `${nome} · ${nomePlat(plat)} queimou R$ ${brl(p5.invest)} em ${p5.dias} dias sem nenhuma conversão. Checar tracking antes de mexer na campanha`,a.id);
+
+      /* 4. CPA disparando */
+      if(p3&&p3.cpa&&ant11&&ant11.cpa&&ant11.conv>=3){
+        const alta=(p3.cpa-ant11.cpa)/ant11.cpa;
+        if(alta>=0.6&&(!alvo||p3.cpa>alvo))
+          add(`cpa-${a.id}-${plat}`,p3.cpa>(alvo||40)*1.5?'alta':'media','cpa',
+            `${nome} · CPA do ${nomePlat(plat)} subiu ${Math.round(alta*100)}% (R$ ${brl(ant11.cpa)} → R$ ${brl(p3.cpa)})${alvo?`, alvo é R$ ${brl(alvo)}`:''}`,a.id);
+      }
+
+      /* 5. entrega despencou — quase sempre saldo ou limitação de orçamento */
+      const serie=linhas(a,plat,isoMais(-8),isoMais(-1));
+      if(serie.length>=5){
+        const ontem=serie[serie.length-1];
+        const antes=serie.slice(0,-1);
+        const media=antes.reduce((s,r)=>s+(r.invest||0),0)/antes.length;
+        if(media>=15&&ontem.invest<media*0.3&&ontem.data>=isoMais(-2))
+          add(`entrega-${a.id}-${plat}`,'media','entrega',
+            `${nome} · ${nomePlat(plat)} gastou só R$ ${brl(ontem.invest)} em ${dCurta(ontem.data)} contra média de R$ ${brl(media)}. Entrega travada, checar saldo ou limite de orçamento`,a.id);
+      }
+
+      /* 6. gastando bem acima da verba combinada */
+      if(verba&&p3&&p3.dias>=2){
+        const md=p3.invest/p3.dias;
+        if(md>verba*1.3)
+          add(`estouro-${a.id}-${plat}`,'media','verba',
+            `${nome} · ${nomePlat(plat)} gastando R$ ${brl(md)}/dia contra verba de R$ ${brl(verba)}`,a.id);
+      }
+
+      /* 7. conversão poluída (contando pageview, ver rota, etc.) */
+      linhas(a,plat,isoMais(-5)).forEach(r=>{
+        if((r.cliques||0)>=5&&(r.conv||0)/r.cliques>0.6)
+          add(`convsuspeita-${a.id}-${plat}-${r.data}`,'media','conversão',
+            `${nome} · ${nomePlat(plat)} marcou ${r.conv} conversões em ${r.cliques} cliques em ${dCurta(r.data)} (${Math.round(r.conv/r.cliques*100)}%). Provável conversão poluída, auditar`,a.id);
+      });
+
+      /* 8. métricas desatualizadas */
+      const ult=ultimoLancamento(a,plat);
+      if(ult&&diasEntre(ult,hoje)>=4)
+        add(`semdado-${a.id}-${plat}`,'baixa','lançar',
+          `${nome} · sem lançar métricas do ${nomePlat(plat)} desde ${dCurta(ult)}`,a.id);
+    });
+
+    /* 9. linha que parece total de um período inteiro lançado num dia só.
+       Acontece quando o relatório do Meta é copiado agregado por campanha:
+       um valor de mês entra como se fosse de um dia e detona toda média,
+       CPA e comparação de período sem deixar rastro. */
+    const rec=linhas(a,null,isoMais(-60));
+    if(rec.length>=4){
+      const vals=rec.map(r=>r.invest||0).filter(v=>v>0).sort((x,y)=>x-y);
+      const mediana=vals.length?vals[Math.floor(vals.length/2)]:0;
+      if(mediana>0)rec.forEach(r=>{
+        if((r.invest||0)>mediana*10&&(r.invest||0)>500)
+          add(`agregado-${a.id}-${r.plat}-${r.data}`,'baixa','lançamento',
+            `${nome} · ${nomePlat(r.plat)} tem R$ ${brl(r.invest)} num único dia (${dCurta(r.data)}), cerca de ${Math.round(r.invest/mediana)}x a mediana diária da conta. Parece total de período lançado como um dia só, o que distorce CPA e comparação de semanas`,a.id);
+      });
+    }
+
+    /* 10. setup incompleto */
+    if(a.status!=='setup'){
+      if(!a.cpaAlvo&&a.plataformas.length)
+        add('semcpa-'+a.id,'info','config',`${nome} · sem CPA alvo definido, os alertas de custo ficam cegos`,a.id);
+      if(!a.forma)
+        add('semforma-'+a.id,'info','config',`${nome} · forma de pagamento não definida`,a.id);
+    }
+
+    /* 11. conta ativa sem otimização registrada há muito tempo */
+    if(a.status==='ativo'||a.status==='atencao'){
+      const logs=registros.filter(l=>l.accId===a.id);
+      const ultLog=logs.length?logs.reduce((m,l)=>l.data>m?l.data:m,logs[0].data):null;
+      if(!ultLog||diasEntre(ultLog,hoje)>=14)
+        add('semlog-'+a.id,'baixa','revisar',
+          `${nome} · ${ultLog?`sem otimização registrada desde ${dCurta(ultLog)}`:'nenhuma otimização registrada ainda'}`,a.id);
+    }
+  });
+
+  /* 12. tarefas */
+  tarefas.filter(t=>!t.done&&t.prazo&&t.prazo<hoje).forEach(t=>{
+    const c=contas.find(a=>a.id===t.accId);
+    add('atraso-'+t.id,'alta','atrasada',
+      `${esc(t.desc)}${c?' · <b>'+esc(c.cliente)+'</b>':''} · era pra ${dBR(t.prazo)}`,t.accId);
+  });
+  tarefas.filter(t=>!t.done&&t.prazo===hoje).forEach(t=>{
+    const c=contas.find(a=>a.id===t.accId);
+    add('hoje-'+t.id,'baixa','hoje',`${esc(t.desc)}${c?' · <b>'+esc(c.cliente)+'</b>':''}`,t.accId);
+  });
+
+  return out.sort((x,y)=>SEV[x.sev].ordem-SEV[y.sev].ordem);
+}
+const alertasAbertos=()=>detectarAlertas().filter(i=>!resolvidos[i.chave]);
 
 /* ===================== avisos (marcar OK persiste no banco, expira à meia-noite) ===================== */
 async function marcarResolvido(chave){
@@ -875,71 +1216,132 @@ async function marcarResolvido(chave){
   await sb.from('avisos_resolvidos').upsert({chave,data:hojeISO()});
   render();
 }
-function itemAviso(chave,classe,html){
-  if(resolvidos[chave])return '';
-  return `<div class="notice ${classe}"><span class="dot"></span><span style="flex:1;">${html}</span><button class="btn btn-ghost btn-sm" data-ok="${chave}" style="flex-shrink:0;">OK</button></div>`;
+function ligarBotoesOk(el){
+  el.querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>{
+    marcarResolvido(b.dataset.ok);toast('Marcado como visto por hoje');
+  });
 }
+
+/* Faixa do topo: só o que é grave o bastante pra interromper. */
 function renderAvisos(){
-  const el=$('notices');let h='';
-  contas.filter(a=>a.status==='critico').forEach(a=>{
-    h+=itemAviso('crit-'+a.id,'n-red',`<b>${esc(a.cliente)}</b> · ${esc(a.acao)||'sem ação definida'}`);
-  });
-  contas.filter(a=>a.forma==='pix').forEach(a=>{
-    const r=autonomia(a);if(!r)return;
-    if(r.nivel==='zero'||r.nivel==='critico'){
-      const q=r.dias<=0?'já zerou':(r.dias===1?'zera amanhã':`zera em ${r.dias} dias`);
-      h+=itemAviso('pix-'+a.id,'n-red',`Pix pendente em <b>${esc(a.cliente)}</b> · saldo de R$ ${brl(r.restante)}, ${q}${a.valorPgto?`. Recarga usual R$ ${brl(a.valorPgto)}`:''}`);
-    } else if(r.nivel==='perto'){
-      h+=itemAviso('pixperto-'+a.id,'n-amber',`<b>${esc(a.cliente)}</b> · R$ ${brl(r.restante)} de saldo, dá pra mais ${r.dias} dias`);
-    }
-  });
-  el.innerHTML=h;
-  el.querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>{marcarResolvido(b.dataset.ok);toast('Marcado como visto por hoje');});
+  const el=$('notices');
+  const graves=alertas.filter(i=>i.sev==='alta').slice(0,6);
+  el.innerHTML=graves.map(i=>
+    `<div class="notice n-red"><span class="dot"></span><span style="flex:1;">${i.html}</span>`+
+    `<button class="btn btn-ghost btn-sm" data-ok="${i.chave}" style="flex-shrink:0;">OK</button></div>`
+  ).join('');
+  ligarBotoesOk(el);
+}
+
+function seta(atual,anterior,inverso){
+  if(anterior==null||anterior===0||atual==null)return '';
+  const d=(atual-anterior)/Math.abs(anterior);
+  if(Math.abs(d)<0.02)return `<div class="delta flat">estável</div>`;
+  const sobe=d>0, bom=inverso?!sobe:sobe;
+  return `<div class="delta ${bom?'up':'down'}">${sobe?'▲':'▼'} ${Math.abs(Math.round(d*100))}% vs 7d anteriores</div>`;
 }
 
 function renderKpis(){
-  const ativas=contas.filter(a=>a.status!=='standby').length;
-  const verba=contas.filter(a=>a.verbaDiaria).reduce((s,a)=>s+a.verbaDiaria,0);
-  const criticas=contas.filter(a=>a.status==='critico').length;
+  const ativas=contas.filter(contaAtiva).length;
+  const verba=contas.reduce((s,a)=>s+(a.verbaDiaria||0)+(a.verbaMeta||0),0);
   const pix=contas.filter(a=>{const r=autonomia(a);return a.forma==='pix'&&r&&r.dias<=3;}).length;
   const pend=tarefas.filter(t=>!t.done);
   const atrasadas=pend.filter(t=>t.prazo&&t.prazo<hojeISO()).length;
-  const hoje=pend.filter(t=>t.prazo===hojeISO()).length;
+  const paraHoje=pend.filter(t=>t.prazo===hojeISO()).length;
+  const graves=alertas.filter(i=>i.sev==='alta').length;
+
+  const at=totalCarteira(7,0),ant=totalCarteira(14,7);
   const items=[
     {v:ativas,l:'contas ativas'},
-    {v:'R$ '+Math.round(verba),l:'verba diária somada'},
-    {v:criticas,l:'contas críticas',al:criticas>0},
+    {v:'R$ '+brl(at.invest).split(',')[0],l:'investido em 7 dias',d:seta(at.invest,ant.invest)},
+    {v:Math.round(at.conv),l:'conversões em 7 dias',d:seta(at.conv,ant.conv)},
+    {v:at.cpa?'R$ '+brl(at.cpa):'—',l:'CPA da carteira',d:seta(at.cpa,ant.cpa,true)},
+    {v:graves,l:'alertas graves',al:graves>0},
     {v:pix,l:'pix a enviar',al:pix>0},
     {v:atrasadas,l:'tarefas atrasadas',al:atrasadas>0},
-    {v:hoje,l:'tarefas pra hoje'}
+    {v:paraHoje,l:'tarefas pra hoje'}
   ];
-  $('kpis').innerHTML=items.map(k=>`<div class="kpi${k.al?' alerta':''}"><div class="v num">${k.v}</div><div class="l">${k.l}</div></div>`).join('');
-  const n=atrasadas+hoje;
+  $('kpis').innerHTML=items.map(k=>
+    `<div class="kpi${k.al?' alerta':''}"><div class="v num">${k.v}</div><div class="l">${k.l}</div>${k.d||''}</div>`
+  ).join('');
+  const n=atrasadas+paraHoje;
   const c=$('taskCount');
   if(n){c.style.display='inline-block';c.textContent=n;}else c.style.display='none';
 }
 
+/* Soma a carteira toda num intervalo (de N dias atrás até M dias atrás). */
+function totalCarteira(deDias,ateDias){
+  const de=isoMais(-deDias),ate=ateDias?isoMais(-ateDias):null;
+  let i=0,cv=0,cl=0;
+  contas.forEach(a=>{
+    (metricas[a.id]||[]).forEach(r=>{
+      if(r.data<de)return;
+      if(ate&&r.data>ate)return;
+      i+=r.invest||0;cv+=r.conv||0;cl+=r.cliques||0;
+    });
+  });
+  return {invest:i,conv:cv,cliques:cl,cpa:cv>0?i/cv:null};
+}
+
 function renderRadar(){
-  const hoje=hojeISO(),itens=[];
-  contas.filter(a=>a.status==='critico').forEach(a=>itens.push({k:'crit-'+a.id,c:'c-red',t:'crítico',h:`<b>${esc(a.cliente)}</b> · ${esc(a.acao)||'definir ação'}`}));
-  contas.filter(a=>a.forma==='pix').forEach(a=>{
-    const r=autonomia(a);
-    if(r&&r.dias<=6)itens.push({k:'pix-'+a.id,c:'c-amber',t:'pix',h:`<b>${esc(a.cliente)}</b> · R$ ${brl(r.restante)} em caixa, ${r.dias<=0?'zerado':'dura '+r.dias+' dias'}`});
-  });
-  tarefas.filter(t=>!t.done&&t.prazo&&t.prazo<hoje).forEach(t=>{
-    const c=contas.find(a=>a.id===t.accId);
-    itens.push({k:'atraso-'+t.id,c:'c-red',t:'atrasada',h:`${esc(t.desc)}${c?' · <b>'+esc(c.cliente)+'</b>':''} · era pra ${dBR(t.prazo)}`});
-  });
-  tarefas.filter(t=>!t.done&&t.prazo===hoje).forEach(t=>{
-    const c=contas.find(a=>a.id===t.accId);
-    itens.push({k:'hoje-'+t.id,c:'c-blue',t:'hoje',h:`${esc(t.desc)}${c?' · <b>'+esc(c.cliente)+'</b>':''}`});
-  });
-  contas.filter(a=>a.status==='atencao'&&a.prioridade==='alta').forEach(a=>itens.push({k:'atencao-'+a.id,c:'c-gray',t:'atenção',h:`<b>${esc(a.cliente)}</b> · ${esc(a.acao)}`}));
-  const visiveis=itens.filter(i=>!resolvidos[i.k]);
-  $('radar').innerHTML=visiveis.length
-    ? visiveis.map(i=>`<div class="radar-row"><span class="chip ${i.c}">${i.t}</span><span style="flex:1;">${i.h}</span><button class="btn btn-ghost btn-sm" data-ok="${i.k}">OK</button></div>`).join('')
-    : '<div class="empty">Nada urgente no radar.</div>';
-  $('radar').querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>{marcarResolvido(b.dataset.ok);toast('Marcado como visto por hoje');});
+  const el=$('radar');
+  el.innerHTML=alertas.length
+    ? alertas.map(i=>
+        `<div class="radar-row"><span class="chip ${SEV[i.sev].chip}">${i.tipo}</span>`+
+        `<span style="flex:1;">${i.html}</span>`+
+        `<button class="btn btn-ghost btn-sm" data-ok="${i.chave}">OK</button></div>`
+      ).join('')
+    : '<div class="empty">Nada no radar. Carteira sob controle.</div>';
+  ligarBotoesOk(el);
+}
+
+function renderConsolidado(){
+  const at=totalCarteira(7,0),ant=totalCarteira(14,7);
+  const porPlat=p=>{
+    let i=0,cv=0;
+    contas.forEach(a=>(metricas[a.id]||[]).forEach(r=>{
+      if(r.plat===p&&r.data>=isoMais(-7)){i+=r.invest||0;cv+=r.conv||0;}
+    }));
+    return {invest:i,conv:cv,cpa:cv>0?i/cv:null};
+  };
+  const porCarteira=c=>{
+    let i=0,cv=0;
+    contas.filter(a=>a.carteira===c).forEach(a=>(metricas[a.id]||[]).forEach(r=>{
+      if(r.data>=isoMais(-7)){i+=r.invest||0;cv+=r.conv||0;}
+    }));
+    return {invest:i,conv:cv,cpa:cv>0?i/cv:null};
+  };
+  const g=porPlat('google'),m=porPlat('meta');
+  const dx=porCarteira('Digital Xpert'),dir=porCarteira('Direto');
+  const linha=(k,v)=>`<div class="linha"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+  const bloco=(t,d)=>`<div class="box"><h3>${t}</h3>
+    ${linha('Investido',d.invest?'R$ '+brl(d.invest):'—')}
+    ${linha('Conversões',d.conv?Math.round(d.conv):'—')}
+    ${linha('CPA',d.cpa?'R$ '+brl(d.cpa):'sem conversão')}</div>`;
+
+  /* Contas que mais consomem verba, pra saber onde o dinheiro está. */
+  const top=contas.map(a=>({a,d:agrega(linhas(a,null,isoMais(-7)))}))
+    .filter(x=>x.d&&x.d.invest>0).sort((x,y)=>y.d.invest-x.d.invest).slice(0,5);
+  const totalTop=at.invest||1;
+  const tabela=top.length?`<div class="table-wrap"><table>
+    <thead><tr><th>Conta</th><th class="t-right">Investido 7d</th><th class="t-right hide-sm">% da carteira</th>
+    <th class="t-right">Conv.</th><th class="t-right">CPA</th></tr></thead><tbody>
+    ${top.map(x=>`<tr>
+      <td><b>${esc(x.a.cliente)}</b></td>
+      <td class="t-right num">R$ ${brl(x.d.invest)}</td>
+      <td class="t-right num hide-sm">${Math.round(x.d.invest/totalTop*100)}%</td>
+      <td class="t-right num">${Math.round(x.d.conv)}</td>
+      <td class="t-right num" style="color:${corCPA(x.d.cpa,x.a.cpaAlvo)}">${x.d.cpa?'R$ '+brl(x.d.cpa):'—'}</td>
+    </tr>`).join('')}</tbody></table></div>`:'';
+
+  $('consolidado').innerHTML=
+    `<div class="grid2" style="margin-bottom:22px;">
+      ${bloco('Google Ads · 7 dias',g)}
+      ${bloco('Meta Ads · 7 dias',m)}
+      ${bloco('Digital Xpert · 7 dias',dx)}
+      ${bloco('Direto · 7 dias',dir)}
+    </div>
+    ${at.invest?`<div class="sec-title">Onde o dinheiro está indo</div>${tabela}`:'<div class="empty">Sem métricas nos últimos 7 dias.</div>'}`;
 }
 
 /* ===================== contas ===================== */
@@ -980,10 +1382,14 @@ function renderContas(){
       const plats=a.plataformas.map(p=>`<span class="pill p-${p}">${p==='google'?'Google Ads':'Meta Ads'}</span>`).join('');
       const dinheiro=[];
       if(a.verbaDiaria)dinheiro.push(`<div><span class="k">Verba Google</span><span class="val num">R$ ${brl(a.verbaDiaria)}/dia</span></div>`);
+      if(a.verbaMeta)dinheiro.push(`<div><span class="k">Verba Meta</span><span class="val num">R$ ${brl(a.verbaMeta)}/dia</span></div>`);
       if(r)dinheiro.push(`<div><span class="k">Saldo Google</span><span class="val num" style="color:${corNivel(r.nivel)}">R$ ${brl(r.restante)} · ${r.dias<=0?'zerado':r.dias+'d'}</span></div>`);
       if(a.forma)dinheiro.push(`<div><span class="k">Pagamento</span><span class="val">${a.forma==='pix'?'Pix manual':'Cartão'}</span></div>`);
-      const rows=(metricas[a.id]||[]).slice().sort((x,y)=>x.data.localeCompare(y.data)).slice(-14);
+      // Só Google no gráfico: as linhas do Meta são totais agregados de mês
+      // inteiro e achatavam a curva diária a ponto de ficar ilegível.
+      const rows=linhas(a,'google').slice(-14);
       const r7=resumo7(a),r7g=resumo7(a,'google'),r7m=resumo7(a,'meta');
+      const meus=alertas.filter(i=>i.accId===a.id);
       const perf=r7?`<div class="money-line" style="margin-top:10px;">
           <div><span class="k">7 dias (tudo)</span><span class="val num">R$ ${brl(r7.invest)}</span></div>
           <div><span class="k">Conversões</span><span class="val num">${r7.conv}</span></div>
@@ -997,13 +1403,24 @@ function renderContas(){
       if(r)resumoBits.push(`<span class="k">Saldo</span> R$ ${brl(r.restante)} (${r.dias<=0?'zerado':r.dias+'d'})`);
       if(r7g&&r7g.cpa)resumoBits.push(`<span class="k">CPA Google</span> R$ ${brl(r7g.cpa)}`);
       if(r7m&&r7m.invest)resumoBits.push(`<span class="k">Meta 7d</span> R$ ${brl(r7m.invest)}`);
+      const selo=meus.length
+        ? ` <span class="chip ${SEV[meus[0].sev].chip}" style="margin-left:6px;">${meus.length} alerta${meus.length>1?'s':''}</span>`
+        : '';
       const resumoLinha=`<div class="acct-summary">${esc(a.acao)||'Nada definido'}<br>${resumoBits.join(' &nbsp;·&nbsp; ')}</div>`;
+      const blocoAlertas=meus.length
+        ? `<div class="acct-block" style="grid-column:1/-1;">
+             <span class="label">Alertas detectados</span>
+             ${meus.map(i=>`<div class="radar-row" style="padding:10px 0;">
+               <span class="chip ${SEV[i.sev].chip}">${i.tipo}</span>
+               <span style="flex:1;">${i.html}</span></div>`).join('')}
+           </div>`
+        : '';
       const card=document.createElement('div');card.className='acct';card.dataset.id=a.id;
       card.innerHTML=`
         <div class="acct-top">
           <button class="acct-toggle" data-toggle-card="${a.id}"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           <div style="flex:1;">
-            <div class="acct-name">${esc(a.cliente)}</div>
+            <div class="acct-name">${esc(a.cliente)}${selo}</div>
             <div class="acct-sub">
               <span>${a.codigo}</span>${a.praca?`<span>·</span><span>${esc(a.praca)}</span>`:''}
               ${a.nicho?`<span>·</span><span>${esc(a.nicho)}</span>`:''}${plats}
@@ -1027,6 +1444,7 @@ function renderContas(){
             ${dinheiro.length?`<div class="money-line">${dinheiro.join('')}</div>`:'<div class="txt" style="color:var(--faint)">Não configurada</div>'}
             ${perf}${grafico}
           </div>
+          ${blocoAlertas}
         </div>
         ${a.notas?`<div class="acct-notas">${esc(a.notas)}</div>`:''}`;
       box.appendChild(card);
@@ -1111,7 +1529,7 @@ function renderVerba(){
 /* ===================== selects ===================== */
 function preencherSelects(){
   const opts=contas.map(a=>`<option value="${a.id}">${a.codigo} · ${esc(a.cliente)}</option>`).join('');
-  ['mConta','hConta','lConta'].forEach(id=>{
+  ['mConta','hConta','lConta','bConta'].forEach(id=>{
     const el=$(id),atual=el.value;el.innerHTML=opts;
     if(atual&&contas.some(a=>a.id===atual))el.value=atual;
   });
@@ -1126,8 +1544,7 @@ function preencherSelects(){
 /* ===================== métricas ===================== */
 function linhasPeriodo(){
   const id=$('hConta').value,dias=parseInt($('hPeriodo').value),plat=$('hPlat').value;
-  const corte=new Date();corte.setDate(corte.getDate()-dias);
-  const ci=corte.toISOString().slice(0,10);
+  const ci=isoMais(-dias);
   return (metricas[id]||[]).filter(r=>(dias>=999||r.data>=ci)&&(!plat||r.plat===plat)).sort((a,b)=>b.data.localeCompare(a.data));
 }
 function renderMetricas(){
@@ -1153,7 +1570,7 @@ function renderMetricas(){
     <div class="chart"><div class="l">Investimento por dia</div>${spark(asc.map(r=>r.invest),'var(--blue)')}</div>
     <div class="chart"><div class="l">Conversões por dia</div>${spark(asc.map(r=>r.conv||0),'var(--green)')}</div>
   </div>`:'';
-  let h=`<table><thead><tr><th>Data</th><th class="hide-sm">Plat.</th><th class="t-right">Invest.</th>
+  let h=`<div class="table-wrap"><table><thead><tr><th>Data</th><th class="hide-sm">Plat.</th><th class="t-right">Invest.</th>
     <th class="t-right hide-sm">Impr.</th><th class="t-right">Cliques</th><th class="t-right">Conv.</th>
     <th class="t-right">CPA</th><th></th></tr></thead><tbody>`;
   rows.slice(0,60).forEach(r=>{
@@ -1163,7 +1580,7 @@ function renderMetricas(){
       <td class="t-right num">${r.cliques||0}</td><td class="t-right num">${r.conv||0}</td>
       <td class="t-right num">${c}</td><td><button class="x" data-delmet="${r.id}">×</button></td></tr>`;
   });
-  $('tabelaMetricas').innerHTML=h+'</tbody></table>';
+  $('tabelaMetricas').innerHTML=h+'</tbody></table></div>';
   const id=$('hConta').value;
   $('tabelaMetricas').querySelectorAll('[data-delmet]').forEach(b=>b.onclick=async()=>{
     await sb.from('metrics').delete().eq('id',b.dataset.delmet);
@@ -1192,7 +1609,7 @@ function renderTarefas(){
       <div class="check" data-toggle="${t.id}"></div>
       <div style="flex:1;">
         <div class="task-txt">${esc(t.desc)}</div>
-        <div class="task-meta">${c?`<span style="color:var(--blue);font-weight:600;">${esc(c.cliente)}</span>`:'<span>geral</span>'}${prazo}<span>prioridade ${t.prio}</span></div>
+        <div class="task-meta">${c?`<span style="color:var(--blue);font-weight:600;">${esc(c.cliente)}</span>`:'<span>geral</span>'}${prazo}<span>prioridade ${t.prio}</span>${t.repetir?`<span title="Tarefa recorrente">↻ ${REPETE[t.repetir]||t.repetir}</span>`:''}</div>
       </div>
       <button class="x" data-deltask="${t.id}">×</button>
     </div>`;
@@ -1202,7 +1619,9 @@ function renderTarefas(){
   document.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=async()=>{
     const t=tarefas.find(k=>k.id===b.dataset.toggle);
     t.done=!t.done;t.doneEm=t.done?hojeISO():null;
-    await sb.from('tasks').update({done:t.done,done_em:t.doneEm}).eq('id',t.id);
+    const {error}=await sb.from('tasks').update({done:t.done,done_em:t.doneEm}).eq('id',t.id);
+    if(error){erroToast('Erro ao atualizar: '+error.message);t.done=!t.done;render();return;}
+    if(t.done&&t.repetir)await criarProxima(t);
     render();
   });
   document.querySelectorAll('[data-deltask]').forEach(b=>b.onclick=async()=>{
@@ -1230,99 +1649,228 @@ function renderLog(){
 }
 
 /* ===================== IA ===================== */
-async function pedirIA(prompt){
-  const res=await fetch('/api/analyze',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({prompt})
-  });
+
+/* A resposta chega em streaming (texto puro). Mostrar enquanto escreve evita a
+   sensação de travamento em análise longa e não estoura o tempo da função. */
+async function pedirIA(prompt,onTexto,esforco){
+  let res;
+  try{
+    res=await fetch('/api/analyze',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt,esforco})
+    });
+  }catch(e){throw new Error('Não consegui falar com o servidor. Verifique a conexão.');}
+
   if(!res.ok){
-    const t=await res.text();
-    throw new Error(t||'Falha na análise');
+    let msg='';
+    try{msg=(await res.clone().json()).erro||'';}catch(e){msg=(await res.text().catch(()=>'')).slice(0,300);}
+    if(res.status===404)
+      msg='A função de IA não está publicada neste deploy (/api/analyze devolveu 404). '+
+          'Confira se o projeto da Vercel está conectado ao repositório do GitHub.';
+    throw new Error(msg||('Falha na análise (HTTP '+res.status+')'));
   }
-  const data=await res.json();
-  return data.texto||'';
+
+  if(!res.body){const t=await res.text();onTexto(t);return t;}
+  const leitor=res.body.getReader(),dec=new TextDecoder();
+  let todo='';
+  for(;;){
+    const {value,done}=await leitor.read();
+    if(done)break;
+    todo+=dec.decode(value,{stream:true});
+    onTexto(todo);
+  }
+  todo+=dec.decode();
+  onTexto(todo);
+  return todo;
 }
 
-$('btnIaConta').onclick=async()=>{
-  const id=$('hConta').value,a=contas.find(x=>x.id===id),rows=linhasPeriodo().slice().reverse();
-  const box=$('iaConta'),txt=$('iaContaTxt');box.classList.add('show');
-  if(!rows.length){txt.textContent='Lance pelo menos um dia de métricas antes de gerar a análise.';return;}
-  $('btnIaConta').disabled=true;txt.innerHTML='<span class="pulse">Analisando os dados da conta...</span>';
-  const linhas=rows.map(r=>`${r.data} | ${r.plat} | R$${brl(r.invest)} | ${r.impr||0} impr | ${r.cliques||0} cliques | ${r.conv||0} conv${r.obs?' | '+r.obs:''}`).join('\n');
-  const hist=registros.filter(l=>l.accId===id).sort((x,y)=>y.data.localeCompare(x.data)).slice(0,8).map(l=>`${l.data}: ${l.texto}`).join('\n')||'nenhum registro';
-  const p=`Você é um analista sênior de tráfego pago (Google Ads e Meta Ads) no Brasil. Analise os dados abaixo e produza um diagnóstico curto e acionável em português do Brasil.
+/* Roda uma análise dentro de uma caixa, cuidando de estado do botão e erro. */
+async function rodarIA({botao,caixa,alvo,titulo,carregando,prompt,esforco}){
+  const box=$(caixa),txt=$(alvo),btn=$(botao);
+  box.classList.add('show');
+  if(titulo&&$('iaContaTitulo'))$('iaContaTitulo').textContent=titulo;
+  const antes=btn.textContent;
+  btn.disabled=true;btn.textContent='Analisando...';
+  txt.innerHTML=`<span class="pulse">${carregando}</span>`;
+  try{
+    const r=await pedirIA(prompt,parcial=>{txt.textContent=parcial;},esforco);
+    if(!r.trim())txt.textContent='A análise voltou vazia. Tente de novo.';
+  }catch(e){
+    txt.textContent='Não foi possível gerar a análise.\n\n'+e.message;
+  }
+  btn.disabled=false;btn.textContent=antes;
+}
 
-CONTA: ${a.cliente}
+/* Contexto textual de uma conta, reaproveitado pelos três prompts. */
+function contextoConta(a,rows){
+  const linhasTxt=rows.map(r=>
+    `${r.data} | ${r.plat} | R$${brl(r.invest)} | ${r.impr||0} impr | ${r.cliques||0} cliques | ${r.conv||0} conv${r.obs?' | '+r.obs:''}`
+  ).join('\n');
+  const hist=registros.filter(l=>l.accId===a.id).sort((x,y)=>y.data.localeCompare(x.data)).slice(0,8)
+    .map(l=>`${l.data}: ${l.texto}`).join('\n')||'nenhum registro';
+  const r=autonomia(a);
+  const meus=alertas.filter(i=>i.accId===a.id)
+    .map(i=>'- ['+i.tipo+'] '+i.html.replace(/<[^>]+>/g,'')).join('\n')||'nenhum';
+  return `CONTA: ${a.cliente} (${a.codigo})
 Nicho: ${a.nicho||'não informado'}
-Plataformas: ${a.plataformas.join(', ')}
-Verba diária: ${a.verbaDiaria?'R$ '+brl(a.verbaDiaria):'não informada'}
-CPA alvo: ${a.cpaAlvo?'R$ '+a.cpaAlvo:'não definido'}
+Praça: ${a.praca||'não informada'}
+Plataformas: ${a.plataformas.join(', ')||'nenhuma'}
+Gestão desde: ${a.inicio?dBR(a.inicio)+' ('+tempoDeConta(a)+')':'não informado'}
+Verba diária: Google ${a.verbaDiaria?'R$'+brl(a.verbaDiaria):'não informada'} | Meta ${a.verbaMeta?'R$'+brl(a.verbaMeta):'não informada'}
+CPA alvo: Google ${a.cpaAlvo?'R$'+brl(a.cpaAlvo):'não definido'} | Meta ${a.cpaAlvoMeta?'R$'+brl(a.cpaAlvoMeta):'mesmo do Google'}
+Saldo: ${r?`R$${brl(r.restante)}, autonomia de ${r.dias} dias no ritmo atual de R$${brl(r.ritmo)}/dia`:'não informado'}
 Contexto: ${a.notas||'nenhum'}
 Ação já planejada: ${a.acao||'nenhuma'}
+
+ALERTAS QUE O PAINEL DETECTOU:
+${meus}
 
 OTIMIZAÇÕES RECENTES:
 ${hist}
 
 MÉTRICAS DIÁRIAS (data | plataforma | investimento | impressões | cliques | conversões):
-${linhas}
+${linhasTxt}`;
+}
+
+$('btnIaConta').onclick=()=>{
+  const id=$('hConta').value,a=contas.find(x=>x.id===id),rows=linhasPeriodo().slice().reverse();
+  if(!a){toast('Escolha uma conta');return;}
+  if(!rows.length){
+    $('iaConta').classList.add('show');
+    $('iaContaTitulo').textContent='Análise da conta';
+    $('iaContaTxt').textContent='Lance pelo menos um dia de métricas antes de gerar a análise.';
+    return;
+  }
+  rodarIA({
+    botao:'btnIaConta',caixa:'iaConta',alvo:'iaContaTxt',
+    titulo:'Análise · '+a.cliente,
+    carregando:'Analisando os dados da conta...',
+    esforco:'alto',
+    prompt:`Você é um analista sênior de tráfego pago no Brasil. Analise os dados abaixo e produza um diagnóstico curto e acionável.
+
+${contextoConta(a,rows)}
+
+Ao analisar, leve em conta:
+- Volume baixo de cliques torna variação de CPA pouco confiável; diga quando a amostra é pequena demais pra concluir.
+- Taxa de conversão acima de 50% dos cliques quase sempre é tracking contando evento errado, não performance boa.
+- Queda brusca de investimento costuma ser saldo ou limite de orçamento, não desempenho.
 
 Responda EXATAMENTE nesta estrutura, em texto simples, sem markdown e sem asteriscos:
 
 DIAGNÓSTICO
-(2 a 4 frases)
+(2 a 4 frases, citando os números que sustentam a leitura)
 
 ALERTAS
 (linhas "- "; se não houver, "- Nenhum alerta crítico no período")
 
 PRÓXIMAS AÇÕES
-(linhas "- ", 2 a 4 ações concretas em ordem de impacto)
+(linhas "- ", 2 a 4 ações concretas em ordem de impacto, cada uma dizendo o que fazer e onde)
 
-Não use travessões em nenhuma parte do texto.`;
-  try{const r=await pedirIA(p);txt.textContent=r||'A análise voltou vazia.';}
-  catch(e){txt.textContent='Análise por IA ainda não configurada nesse site (falta a chave de API no servidor).';}
-  $('btnIaConta').disabled=false;
+Não use travessões em nenhuma parte do texto.`
+  });
 };
 
-$('btnIaCarteira').onclick=async()=>{
-  const box=$('iaCarteira'),txt=$('iaCarteiraTxt');box.classList.add('show');
-  $('btnIaCarteira').disabled=true;txt.innerHTML='<span class="pulse">Lendo a carteira inteira...</span>';
-  const corte=new Date();corte.setDate(corte.getDate()-7);
-  const ci=corte.toISOString().slice(0,10),hoje=hojeISO();
+$('btnIaRelatorio').onclick=()=>{
+  const id=$('hConta').value,a=contas.find(x=>x.id===id),rows=linhasPeriodo().slice().reverse();
+  if(!a){toast('Escolha uma conta');return;}
+  if(!rows.length){
+    $('iaConta').classList.add('show');
+    $('iaContaTitulo').textContent='Relatório para o cliente';
+    $('iaContaTxt').textContent='Lance pelo menos um dia de métricas antes de gerar o relatório.';
+    return;
+  }
+  const t=agrega(rows),alvo=a.cpaAlvo;
+  rodarIA({
+    botao:'btnIaRelatorio',caixa:'iaConta',alvo:'iaContaTxt',
+    titulo:'Relatório para o cliente · '+a.cliente,
+    carregando:'Escrevendo o relatório...',
+    prompt:`Escreva um relatório de performance para MANDAR AO CLIENTE ${a.cliente}, sobre o período coberto pelos dados abaixo.
+
+${contextoConta(a,rows)}
+
+TOTAIS DO PERÍODO: R$${brl(t.invest)} investidos, ${t.cliques} cliques, ${Math.round(t.conv)} conversões${t.cpa?`, CPA R$${brl(t.cpa)}`:''}${alvo?` (alvo R$${brl(alvo)})`:''}.
+
+Regras do texto:
+- O leitor é o dono do negócio, não um especialista em mídia. Nada de jargão (evite CTR, CPM, lance, correspondência ampla). Se precisar citar CPA, chame de custo por lead ou custo por contato.
+- Tom profissional e direto, sem exagero comercial e sem prometer resultado.
+- Seja honesto: se o período foi ruim, diga o que aconteceu e o que já está sendo feito. Não invente número que não está nos dados.
+- Entre 150 e 250 palavras, em parágrafos curtos.
+
+Estrutura, em texto simples, sem markdown e sem asteriscos:
+
+RESUMO DO PERÍODO
+(o que foi investido e o que voltou disso, em linguagem de dono de negócio)
+
+O QUE FIZEMOS
+(linhas "- ", as principais mudanças feitas na conta)
+
+PRÓXIMOS PASSOS
+(linhas "- ", o que vem agora)
+
+Não use travessões em nenhuma parte do texto.`
+  });
+};
+
+$('btnIaCarteira').onclick=()=>{
+  const hoje=hojeISO();
   const resumo=contas.map(a=>{
-    const rows=(metricas[a.id]||[]).filter(r=>r.data>=ci);
-    const t=rows.reduce((s,r)=>({i:s.i+r.invest,c:s.c+(r.conv||0)}),{i:0,c:0});
-    const m=rows.length?` | 7d: R$${brl(t.i)}, ${t.c} conv${t.c>0?', CPA R$'+brl(t.i/t.c):''}`:' | sem métricas';
+    const d7=agrega(linhas(a,null,isoMais(-7)));
+    const m=d7?` | 7d: R$${brl(d7.invest)}, ${Math.round(d7.conv)} conv${d7.cpa?', CPA R$'+brl(d7.cpa):''}`:' | sem métricas em 7 dias';
     const r=autonomia(a);
-    return `${a.codigo} ${a.cliente} (${a.nicho||'?'}) | status ${a.status} | prio ${a.prioridade} | ${a.plataformas.join('+')}${a.verbaDiaria?' | verba R$'+brl(a.verbaDiaria)+'/dia':''}${r?' | saldo R$'+brl(r.restante)+' ('+r.dias+'d)':''} | ação: ${a.acao||'nenhuma'}${m}`;
+    return `${a.codigo} ${a.cliente} (${a.nicho||'?'}) | status ${a.status} | prio ${a.prioridade} | ${a.plataformas.join('+')||'sem plataforma'}`+
+      `${a.verbaDiaria?' | verba Google R$'+brl(a.verbaDiaria)+'/dia':''}${a.verbaMeta?' | verba Meta R$'+brl(a.verbaMeta)+'/dia':''}`+
+      `${r?' | saldo R$'+brl(r.restante)+' ('+r.dias+'d de autonomia)':''} | ação: ${a.acao||'nenhuma'}${m}`;
   }).join('\n');
   const tp=tarefas.filter(t=>!t.done).map(t=>{
     const c=contas.find(a=>a.id===t.accId);
     return `${t.desc}${c?' ('+c.cliente+')':''}${t.prazo?' | prazo '+t.prazo+(t.prazo<hoje?' ATRASADA':''):''}`;
   }).join('\n')||'nenhuma';
-  const p=`Você é o braço direito de um gestor de tráfego pago no Brasil que administra a carteira abaixo (Google Ads e Meta Ads). Faça uma leitura executiva.
+  const alertasTxt=alertas.map(i=>`[${i.sev}] ${i.tipo}: ${i.html.replace(/<[^>]+>/g,'')}`).join('\n')||'nenhum';
+  const at=totalCarteira(7,0),ant=totalCarteira(14,7);
+
+  rodarIA({
+    botao:'btnIaCarteira',caixa:'iaCarteira',alvo:'iaCarteiraTxt',
+    carregando:'Lendo a carteira inteira...',
+    esforco:'alto',
+    prompt:`Você é o braço direito de um gestor de tráfego pago no Brasil que administra a carteira abaixo. Faça uma leitura executiva do dia. Hoje é ${dBR(hoje)}.
+
+CARTEIRA CONSOLIDADA:
+Últimos 7 dias: R$${brl(at.invest)} investidos, ${Math.round(at.conv)} conversões${at.cpa?', CPA R$'+brl(at.cpa):''}
+7 dias anteriores: R$${brl(ant.invest)} investidos, ${Math.round(ant.conv)} conversões${ant.cpa?', CPA R$'+brl(ant.cpa):''}
 
 CONTAS:
 ${resumo}
 
+ALERTAS AUTOMÁTICOS EM ABERTO:
+${alertasTxt}
+
 TAREFAS PENDENTES:
 ${tp}
+
+Priorize pelo que causa perda de dinheiro ou de lead agora: conta parada por saldo, tracking quebrado, CPA disparando em conta de verba alta. Conta em standby ou setup sem verba é menos urgente. Cite o nome do cliente em cada prioridade.
 
 Responda EXATAMENTE nesta estrutura, em texto simples, sem markdown e sem asteriscos:
 
 LEITURA GERAL
-(2 a 3 frases)
+(2 a 3 frases sobre como a carteira está em relação à semana anterior)
 
 TOP 3 PRIORIDADES DE HOJE
-(linhas "1. ", "2. ", "3. ")
+(linhas "1. ", "2. ", "3. ", cada uma com o cliente, o que fazer e por quê)
 
 RISCOS
-(linhas "- ")
+(linhas "- ", o que pode virar problema essa semana se ninguém mexer)
 
-Não use travessões em nenhuma parte do texto.`;
-  try{const r=await pedirIA(p);txt.textContent=r||'A análise voltou vazia.';}
-  catch(e){txt.textContent='Análise por IA ainda não configurada nesse site (falta a chave de API no servidor).';}
-  $('btnIaCarteira').disabled=false;
+Não use travessões em nenhuma parte do texto.`
+  });
 };
+
+/* Botões de copiar das caixas de IA */
+document.querySelectorAll('[data-copiar]').forEach(b=>b.onclick=async()=>{
+  const t=$(b.dataset.copiar).textContent||'';
+  if(!t.trim()){toast('Nada pra copiar ainda');return;}
+  try{await navigator.clipboard.writeText(t);toast('Copiado');}
+  catch(e){erroToast('O navegador bloqueou a cópia. Selecione o texto e copie na mão.');}
+});
 
 /* ===================== modal conta ===================== */
 function abrirConta(id){
@@ -1336,6 +1884,7 @@ function abrirConta(id){
   $('fPraca').value=a?(a.praca||''):'';
   $('fInicio').value=a?(a.inicio||''):'';
   $('fCpaAlvo').value=a&&a.cpaAlvo!=null?a.cpaAlvo:'';
+  $('fCpaAlvoMeta').value=a&&a.cpaAlvoMeta!=null?a.cpaAlvoMeta:'';
   $('fCarteira').value=a?a.carteira:'Digital Xpert';
   $('fPrio').value=a?a.prioridade:'media';
   $('fStatus').value=a?a.status:'setup';
@@ -1345,6 +1894,7 @@ function abrirConta(id){
   $('fMeta').checked=a?a.plataformas.includes('meta'):false;
   $('fForma').value=a?(a.forma||''):'';
   $('fVerba').value=a&&a.verbaDiaria!=null?a.verbaDiaria:'';
+  $('fVerbaMeta').value=a&&a.verbaMeta!=null?a.verbaMeta:'';
   $('fSaldo').value=a&&a.saldo!=null?a.saldo:'';
   $('fSaldoData').value=a?(a.saldoData||''):hojeISO();
   $('fDiaPgto').value=a&&a.diaPgto!=null?a.diaPgto:'';
@@ -1368,20 +1918,23 @@ $('btnSalvaConta').onclick=async()=>{
   const dados={
     cliente,nicho:$('fNicho').value.trim(),contaId:$('fContaId').value.trim(),metaContaId:$('fMetaContaId').value.trim(),carteira,
     praca:$('fPraca').value.trim(),inicio:$('fInicio').value||'',cpaAlvo:n($('fCpaAlvo').value),
+    cpaAlvoMeta:n($('fCpaAlvoMeta').value),
     prioridade:$('fPrio').value,status:$('fStatus').value,
     acao:$('fAcao').value.trim(),notas:$('fNotas').value.trim(),plataformas:plats,
-    forma:$('fForma').value,verbaDiaria:n($('fVerba').value),
+    forma:$('fForma').value,verbaDiaria:n($('fVerba').value),verbaMeta:n($('fVerbaMeta').value),
     saldo:n($('fSaldo').value),saldoData:$('fSaldoData').value||'',
     diaPgto:n($('fDiaPgto').value),valorPgto:n($('fValorPgto').value)
   };
   if(editando){
     const i=contas.findIndex(a=>a.id===editando);
-    contas[i]={...contas[i],...dados};
-    await sb.from('accounts').update(contaToRow(contas[i])).eq('id',editando);
+    const antes=contas[i];
+    contas[i]={...antes,...dados};
+    const {error}=await sb.from('accounts').update(contaToRow(contas[i])).eq('id',editando);
+    if(error){contas[i]=antes;erroToast('Erro ao salvar: '+error.message);return;}
   } else {
     dados.codigo=proximoCodigo(carteira);
     const {data,error}=await sb.from('accounts').insert(contaToRow(dados)).select().single();
-    if(error){toast('Erro ao salvar: '+error.message);return;}
+    if(error){erroToast('Erro ao salvar: '+error.message);return;}
     contas.push(rowToConta(data));
   }
   $('ovConta').classList.remove('open');render();toast('Conta salva');
@@ -1431,29 +1984,147 @@ $('btnConfirmaPix').onclick=async()=>{
 $('btnCancelaPix').onclick=()=>$('ovPix').classList.remove('open');
 
 /* ===================== lançar métricas ===================== */
+
+/* Grava respeitando o índice único (conta+dia+plataforma): relançar o mesmo dia
+   corrige o valor em vez de criar uma linha duplicada que somava em dobro. */
+async function gravarMetricas(id,rows){
+  const {data,error}=await sb.from('metrics')
+    .upsert(rows,{onConflict:'account_id,data,plat'}).select();
+  if(error)return {error};
+  const lista=metricas[id]=metricas[id]||[];
+  data.forEach(r=>{
+    const novo=rowToMetric(r);
+    const i=lista.findIndex(x=>x.data===novo.data&&x.plat===novo.plat);
+    if(i>=0)lista[i]=novo;else lista.push(novo);
+  });
+  return {n:data.length};
+}
+
 $('btnLancar').onclick=async()=>{
   const id=$('mConta').value,data=$('mData').value,invest=parseFloat($('mInvest').value);
   if(!id||!data||isNaN(invest)){toast('Preencha conta, data e investimento');return;}
   const row={account_id:id,data,plat:$('mPlat').value,invest,
     impr:parseInt($('mImpr').value)||0,cliques:parseInt($('mCliques').value)||0,
     conv:parseFloat($('mConv').value)||0,obs:$('mObs').value.trim()||null};
-  const {data:novo,error}=await sb.from('metrics').insert(row).select().single();
-  if(error){toast('Erro ao lançar: '+error.message);return;}
-  if(!metricas[id])metricas[id]=[];
-  metricas[id].push(rowToMetric(novo));
+  const {error}=await gravarMetricas(id,[row]);
+  if(error){erroToast('Erro ao lançar: '+error.message);return;}
   ['mInvest','mImpr','mCliques','mConv','mObs'].forEach(x=>$(x).value='');
   $('hConta').value=id;render();toast('Dia lançado');
 };
 
+/* ===================== lançamento em lote (colar do relatório) ===================== */
+
+/* Números no formato brasileiro. O caso chato é "1.234": ponto é milhar quando
+   agrupa de 3 em 3, senão é decimal mesmo (74.51). */
+function numBR(s){
+  if(s==null)return NaN;
+  s=String(s).trim().replace(/^R\$\s*/i,'').replace(/%$/,'').replace(/[\s ]/g,'');
+  if(!s||s==='-'||s==='--')return 0;
+  const temV=s.includes(','),temP=s.includes('.');
+  if(temV&&temP)s=s.replace(/\./g,'').replace(',','.');
+  else if(temV)s=s.replace(',','.');
+  else if(temP&&/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');
+  return /^-?\d*\.?\d+$/.test(s)?parseFloat(s):NaN;
+}
+function dataBR(s){
+  s=String(s).trim();
+  let m,y,mes,dia;
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))){[,y,mes,dia]=m;}
+  else if((m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/))){[,dia,mes,y]=m;if(y.length===2)y='20'+y;}
+  else if((m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})$/))){[,dia,mes]=m;y=String(new Date().getFullYear());}
+  else return null;
+  const iso=`${y}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+  const d=dataDe(iso);
+  if(isNaN(d)||d.getMonth()+1!==+mes||d.getDate()!==+dia)return null;
+  return iso;
+}
+function partirLinha(l){
+  let p=l.split(/[\t;]|\s{2,}/).map(x=>x.trim()).filter(Boolean);
+  if(p.length<2)p=l.trim().split(/\s+/);
+  return p;
+}
+function lerLote(){
+  const texto=$('bTexto').value;
+  const vistos=new Set();
+  return texto.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map((l,i)=>{
+    const p=partirLinha(l);
+    const data=dataBR(p[0]||'');
+    if(!data)return {n:i+1,cru:l,erro:'data não reconhecida'};
+    if(data>hojeISO())return {n:i+1,cru:l,erro:'data no futuro'};
+    if(vistos.has(data))return {n:i+1,cru:l,erro:'data repetida na colagem'};
+    const nums=p.slice(1).map(numBR);
+    if(nums.length&&nums.some(isNaN))return {n:i+1,cru:l,erro:'número não reconhecido'};
+    vistos.add(data);
+    return {n:i+1,cru:l,data,
+      invest:nums[0]||0,impr:Math.round(nums[1]||0),
+      cliques:Math.round(nums[2]||0),conv:nums[3]||0};
+  });
+}
+function renderPreview(){
+  const linhas=lerLote(),el=$('bPreview');
+  if(!linhas.length){el.innerHTML='';loteValido=null;$('btnImportar').disabled=true;return;}
+  const bons=linhas.filter(l=>!l.erro),ruins=linhas.filter(l=>l.erro);
+  el.innerHTML=`<div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>Data</th><th class="t-right">Invest.</th><th class="t-right hide-sm">Impr.</th>
+    <th class="t-right">Cliques</th><th class="t-right">Conv.</th><th>Situação</th></tr></thead><tbody>
+    ${linhas.map(l=>l.erro
+      ? `<tr><td>${l.n}</td><td colspan="5" style="color:var(--muted);">${esc(l.cru).slice(0,70)}</td><td class="prev-erro">${l.erro}</td></tr>`
+      : `<tr><td>${l.n}</td><td>${dBR(l.data)}</td><td class="t-right num">R$ ${brl(l.invest)}</td>
+         <td class="t-right num hide-sm">${l.impr}</td><td class="t-right num">${l.cliques}</td>
+         <td class="t-right num">${l.conv}</td><td class="prev-ok">ok</td></tr>`
+    ).join('')}</tbody></table></div>
+    <div class="hint">${bons.length} linha${bons.length===1?'':'s'} pronta${bons.length===1?'':'s'}${ruins.length?` · ${ruins.length} com problema (serão ignoradas)`:''}. Dias que já existem serão sobrescritos.</div>`;
+  loteValido=bons;
+  $('btnImportar').disabled=!bons.length;
+}
+$('btnConferir').onclick=renderPreview;
+$('bTexto').oninput=()=>{loteValido=null;$('btnImportar').disabled=true;};
+$('btnImportar').onclick=async()=>{
+  if(!loteValido||!loteValido.length){toast('Confira as linhas primeiro');return;}
+  const id=$('bConta').value,plat=$('bPlat').value;
+  if(!id){toast('Escolha a conta');return;}
+  const btn=$('btnImportar');btn.disabled=true;btn.textContent='Importando...';
+  const rows=loteValido.map(l=>({account_id:id,data:l.data,plat,invest:l.invest,
+    impr:l.impr,cliques:l.cliques,conv:l.conv,obs:null}));
+  const {error,n}=await gravarMetricas(id,rows);
+  btn.textContent='Importar';
+  if(error){erroToast('Erro ao importar: '+error.message);btn.disabled=false;return;}
+  $('bTexto').value='';$('bPreview').innerHTML='';loteValido=null;
+  $('hConta').value=id;render();toast(`${n} dia${n===1?'':'s'} importado${n===1?'':'s'}`);
+};
+
 /* ===================== tarefas e log ===================== */
+const REPETE={diaria:'todo dia',semanal:'toda semana',quinzenal:'a cada 15 dias',mensal:'todo mês'};
+
+/* Rotina concluída gera a próxima ocorrência. Se o prazo calculado já passou
+   (tarefa atrasada há tempos), avança até cair no futuro pra não criar uma
+   fila de tarefas vencidas. */
+async function criarProxima(t){
+  let prazo=t.prazo||hojeISO();
+  const avanca=d=>t.repetir==='diaria'?somaDias(d,1)
+    :t.repetir==='semanal'?somaDias(d,7)
+    :t.repetir==='quinzenal'?somaDias(d,15)
+    :somaMeses(d,1);
+  do{prazo=avanca(prazo);}while(prazo<=hojeISO());
+  const row={account_id:t.accId||null,descricao:t.desc,prazo,prioridade:t.prio,
+    done:false,criada_em:hojeISO(),repetir:t.repetir};
+  const {data,error}=await sb.from('tasks').insert(row).select().single();
+  if(error){erroToast('Não consegui criar a próxima ocorrência: '+error.message);return;}
+  tarefas.push(rowToTask(data));
+  toast('Próxima ocorrência marcada pra '+dBR(prazo));
+}
+
 $('btnAddTarefa').onclick=async()=>{
   const desc=$('tDesc').value.trim();
   if(!desc){toast('Escreva a tarefa');$('tDesc').focus();return;}
-  const row={account_id:$('tConta').value||null,descricao:desc,prazo:$('tPrazo').value||null,prioridade:$('tPrio').value,done:false,criada_em:hojeISO()};
+  const repetir=$('tRepetir').value||null;
+  if(repetir&&!$('tPrazo').value){toast('Tarefa que repete precisa de um prazo');$('tPrazo').focus();return;}
+  const row={account_id:$('tConta').value||null,descricao:desc,prazo:$('tPrazo').value||null,
+    prioridade:$('tPrio').value,done:false,criada_em:hojeISO(),repetir};
   const {data,error}=await sb.from('tasks').insert(row).select().single();
-  if(error){toast('Erro: '+error.message);return;}
+  if(error){erroToast('Erro: '+error.message);return;}
   tarefas.push(rowToTask(data));
-  $('tDesc').value='';$('tPrazo').value='';
+  $('tDesc').value='';$('tPrazo').value='';$('tRepetir').value='';
   render();toast('Tarefa adicionada');
 };
 $('btnAddLog').onclick=async()=>{
@@ -1461,9 +2132,9 @@ $('btnAddLog').onclick=async()=>{
   if(!texto){toast('Descreva o que foi feito');$('lTexto').focus();return;}
   const row={account_id:$('lConta').value,data:$('lData').value||hojeISO(),texto};
   const {data,error}=await sb.from('opt_log').insert(row).select().single();
-  if(error){toast('Erro: '+error.message);return;}
+  if(error){erroToast('Erro: '+error.message);return;}
   registros.push(rowToLog(data));
-  $('lTexto').value='';renderLog();toast('Otimização registrada');
+  $('lTexto').value='';render();toast('Otimização registrada');
 };
 
 /* ===================== confirmação ===================== */
@@ -1475,11 +2146,28 @@ $('btnConfSim').onclick=()=>{
 $('btnConfNao').onclick=()=>{confirmaFn=null;$('ovConfirma').classList.remove('open');};
 
 /* ===================== navegação e filtros ===================== */
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  t.classList.add('active');
-  ['dash','contas','verba','metricas','tarefas','log'].forEach(n=>{ $('v-'+n).hidden=(t.dataset.tab!==n); });
-  window.scrollTo({top:0,behavior:'smooth'});
+const ABAS=['dash','contas','verba','metricas','tarefas','log'];
+function abrirAba(nome,rolar){
+  if(!ABAS.includes(nome))nome='dash';
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===nome));
+  ABAS.forEach(n=>{$('v-'+n).hidden=(n!==nome);});
+  try{localStorage.setItem('torre.aba',nome);}catch(e){}
+  if(rolar)window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>abrirAba(t.dataset.tab,true));
+
+/* Atalhos: 1 a 6 trocam de aba, "/" foca a busca, Esc fecha modal. */
+document.addEventListener('keydown',e=>{
+  const dentroDeCampo=/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+  if(e.key==='Escape'){
+    if(dentroDeCampo&&!document.querySelector('.overlay.open')){e.target.blur();return;}
+    document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open'));
+    confirmaFn=null;return;
+  }
+  if(dentroDeCampo||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(document.querySelector('.overlay.open'))return;
+  if(e.key>='1'&&e.key<='6'){abrirAba(ABAS[+e.key-1],true);e.preventDefault();return;}
+  if(e.key==='/'){abrirAba('contas',true);setTimeout(()=>$('busca').focus(),60);e.preventDefault();}
 });
 $('fPlat').querySelectorAll('button').forEach(b=>b.onclick=()=>{
   $('fPlat').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
@@ -1495,10 +2183,34 @@ $('hPeriodo').onchange=renderMetricas;
 $('hPlat').onchange=renderMetricas;
 $('lFiltro').onchange=renderLog;
 document.querySelectorAll('.overlay').forEach(o=>o.onclick=e=>{ if(e.target===o){o.classList.remove('open');confirmaFn=null;} });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open')); });
+
+/* ===================== backup ===================== */
+$('btnBackup').onclick=()=>{
+  const dump={
+    gerado_em:new Date().toISOString(),
+    versao:2,
+    contas,
+    metricas:Object.entries(metricas).flatMap(([accId,rows])=>rows.map(r=>({accId,...r}))),
+    tarefas,registros,recargas
+  };
+  const blob=new Blob([JSON.stringify(dump,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`torre-de-controle-${hojeISO()}.json`;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast('Backup baixado');
+};
+$('btnRecarregar').onclick=async()=>{
+  const b=$('btnRecarregar');b.disabled=true;b.textContent='...';
+  await carregar();
+  b.disabled=false;b.textContent='Atualizar';toast('Dados atualizados');
+};
 
 function render(){
-  renderAvisos();renderKpis();renderRadar();renderContas();renderVerba();
+  alertas=alertasAbertos();   // uma vez só por ciclo, o motor é caro
+  renderAvisos();renderKpis();renderRadar();renderConsolidado();
+  renderContas();renderVerba();
   preencherSelects();renderMetricas();renderTarefas();renderLog();
 }
 
@@ -1507,6 +2219,8 @@ async function iniciar(){
   $('hoje').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   $('mData').value=hojeISO();
   $('lData').value=hojeISO();
+  let aba='dash';try{aba=localStorage.getItem('torre.aba')||'dash';}catch(e){}
+  abrirAba(aba,false);
 
   const {data:{session}}=await sb.auth.getSession();
   $('loadscreen').style.display='none';
