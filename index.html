@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Torre de Controle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F5F2;
+    --surface:#FFFFFF;
+    --ink:#22272E;
+    --ink-2:#4B535F;
+    --muted:#7C8695;
+    --faint:#A5ADBA;
+    --line:#E6E4DF;
+    --line-2:#D5D2CB;
+    --blue:#2C5CE0;
+    --blue-dark:#1E45B0;
+    --blue-soft:#ECF1FD;
+    --red:#C7443F;
+    --red-soft:#FBEDEC;
+    --amber:#B2740B;
+    --amber-soft:#FDF3E3;
+    --green:#1B8A5F;
+    --green-soft:#E9F5F0;
+    --gray:#7C8695;
+    --gray-soft:#F0EFEC;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+    font-size:15px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:44px 28px 120px;}
+
+  /* ---------- tipografia ---------- */
+  h1,h2,h3{font-family:'Sora',sans-serif;margin:0;letter-spacing:-0.02em;}
+  h1{font-size:27px;font-weight:600;}
+  h2{font-size:15px;font-weight:600;}
+  h3{font-size:16px;font-weight:600;}
+  .label{
+    font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);
+  }
+  .sub{color:var(--muted);font-size:14px;font-weight:400;}
+  .num{font-variant-numeric:tabular-nums;}
+
+  /* ---------- header ---------- */
+  header{margin-bottom:36px;}
+  .title-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .date{color:var(--muted);font-size:14px;}
+  .head-actions{display:flex;gap:10px;align-items:center;}
+
+  /* ---------- botões ---------- */
+  .btn{
+    font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;
+    border-radius:10px;padding:11px 20px;cursor:pointer;border:1px solid transparent;
+    transition:background .15s,border-color .15s,color .15s;line-height:1.2;
+  }
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-primary:hover{background:var(--blue-dark);}
+  .btn-ghost{background:transparent;border-color:var(--line-2);color:var(--ink-2);}
+  .btn-ghost:hover{border-color:var(--ink-2);}
+  .btn-danger{background:transparent;border-color:var(--red);color:var(--red);}
+  .btn-danger:hover{background:var(--red-soft);}
+  .btn-sm{font-size:13px;padding:7px 14px;border-radius:8px;}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .btn-link{
+    background:none;border:none;color:var(--blue);font-family:inherit;font-size:14px;
+    font-weight:600;cursor:pointer;padding:0;
+  }
+  .btn-link:hover{text-decoration:underline;}
+
+  /* ---------- inputs ---------- */
+  .field{display:flex;flex-direction:column;gap:7px;}
+  .field > span{font-size:12.5px;font-weight:600;color:var(--ink-2);}
+  input,select,textarea{
+    font-family:'Plus Jakarta Sans',sans-serif;font-size:14.5px;color:var(--ink);
+    background:var(--surface);border:1px solid var(--line-2);border-radius:10px;
+    padding:11px 13px;width:100%;transition:border-color .15s,box-shadow .15s;
+  }
+  textarea{resize:vertical;min-height:60px;line-height:1.55;}
+  input:focus,select:focus,textarea:focus{
+    outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);
+  }
+  input::placeholder,textarea::placeholder{color:var(--faint);}
+  select{appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237C8695' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:26px 28px;
+  }
+  .card + .card{margin-top:20px;}
+  .card-head{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin-bottom:22px;flex-wrap:wrap;}
+
+  /* ---------- avisos ---------- */
+  .notices{display:flex;flex-direction:column;gap:10px;margin-top:24px;}
+  .notice{
+    display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-radius:12px;
+    font-size:14.5px;line-height:1.5;border:1px solid;
+  }
+  .notice b{font-weight:600;}
+  .n-red{background:var(--red-soft);border-color:#F0D5D3;color:#7E2A26;}
+  .n-amber{background:var(--amber-soft);border-color:#F0DFC0;color:#71490A;}
+  .notice .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:9px;}
+  .n-red .dot{background:var(--red);}
+  .n-amber .dot{background:var(--amber);}
+
+  /* ---------- tabs ---------- */
+  .tabs{
+    display:flex;gap:6px;margin:32px 0 28px;flex-wrap:wrap;
+    border-bottom:1px solid var(--line);padding-bottom:0;
+  }
+  .tab{
+    background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;
+    font-family:'Sora',sans-serif;font-size:14.5px;font-weight:500;color:var(--muted);
+    padding:10px 14px 13px;cursor:pointer;transition:color .15s,border-color .15s;
+  }
+  .tab:hover{color:var(--ink);}
+  .tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600;}
+  .tab .count{
+    display:inline-block;background:var(--red);color:#fff;font-size:11px;font-weight:700;
+    border-radius:9px;padding:1px 7px;margin-left:7px;vertical-align:1px;font-family:'Plus Jakarta Sans',sans-serif;
+  }
+
+  /* ---------- kpis ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:16px;margin-bottom:24px;}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;}
+  .kpi .v{font-family:'Sora',sans-serif;font-size:30px;font-weight:600;letter-spacing:-0.03em;line-height:1.1;}
+  .kpi .l{font-size:13px;color:var(--muted);margin-top:6px;}
+  .kpi.alerta .v{color:var(--red);}
+
+  /* ---------- radar ---------- */
+  .radar-row{
+    display:flex;gap:14px;align-items:flex-start;padding:16px 0;border-top:1px solid var(--line);
+    font-size:14.5px;line-height:1.5;
+  }
+  .radar-row:first-child{border-top:none;padding-top:0;}
+  .chip{
+    font-size:11.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+    padding:3px 9px;border-radius:6px;flex-shrink:0;margin-top:2px;
+  }
+  .c-red{background:var(--red-soft);color:var(--red);}
+  .c-amber{background:var(--amber-soft);color:var(--amber);}
+  .c-blue{background:var(--blue-soft);color:var(--blue);}
+  .c-gray{background:var(--gray-soft);color:var(--gray);}
+  .c-green{background:var(--green-soft);color:var(--green);}
+
+  /* ---------- filtros ---------- */
+  .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:26px;}
+  .seg{display:flex;background:var(--gray-soft);border-radius:10px;padding:3px;}
+  .seg button{
+    background:none;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:13.5px;font-weight:500;
+    color:var(--ink-2);padding:7px 15px;border-radius:8px;cursor:pointer;transition:all .15s;white-space:nowrap;
+  }
+  .seg button:hover{color:var(--ink);}
+  .seg button.on{background:var(--surface);color:var(--blue);font-weight:600;box-shadow:0 1px 3px rgba(34,39,46,.08);}
+  .search{flex:1;min-width:170px;max-width:280px;}
+  .filters .btn{margin-left:auto;}
+
+  /* ---------- lista de contas ---------- */
+  .group{margin-bottom:38px;}
+  .group-head{display:flex;align-items:center;gap:11px;margin-bottom:16px;}
+  .group-head .dot{width:9px;height:9px;border-radius:50%;}
+  .group-head .n{color:var(--faint);font-size:13.5px;}
+
+  .acct{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:24px 26px;margin-bottom:14px;transition:border-color .15s,box-shadow .15s;
+  }
+  .acct:hover{border-color:var(--line-2);box-shadow:0 2px 10px rgba(34,39,46,.04);}
+  .acct-top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;}
+  .acct-name{font-family:'Sora',sans-serif;font-size:17px;font-weight:600;letter-spacing:-0.02em;}
+  .acct-sub{font-size:13.5px;color:var(--muted);margin-top:4px;display:flex;gap:9px;flex-wrap:wrap;align-items:center;}
+  .pill{font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:6px;}
+  .p-google{background:var(--blue-soft);color:var(--blue);}
+  .p-meta{background:var(--green-soft);color:var(--green);}
+  .acct-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+  .acct-actions select{width:auto;font-size:13px;padding:7px 30px 7px 11px;border-radius:8px;}
+
+  .acct-toggle{
+    background:none;border:none;cursor:pointer;color:var(--faint);flex-shrink:0;
+    width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+    border-radius:7px;transition:all .15s;margin-top:2px;
+  }
+  .acct-toggle:hover{background:var(--gray-soft);color:var(--ink-2);}
+  .acct-toggle svg{transition:transform .15s;}
+  .acct.open .acct-toggle svg{transform:rotate(90deg);}
+  .plat-status-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;}
+  .plat-status{display:flex;align-items:center;gap:8px;}
+  .plat-status .k{font-size:12px;color:var(--muted);font-weight:600;}
+  .plat-status select{
+    width:auto;font-size:12.5px;padding:5px 26px 5px 10px;border-radius:7px;
+  }
+  .acct-summary{font-size:13.5px;color:var(--ink-2);margin-top:10px;line-height:1.5;}
+  .acct-summary .k{color:var(--muted);}
+  .acct-body{display:none;margin-top:18px;padding-top:18px;border-top:1px solid var(--line);grid-template-columns:1fr 1fr;gap:22px;}
+  .acct.open .acct-body{display:grid;}
+  .acct.open .acct-summary{display:none;}
+  .acct-block .label{margin-bottom:6px;display:block;}
+  .acct-block .txt{font-size:14.5px;line-height:1.55;}
+  .acct-notas{font-size:13.5px;color:var(--muted);margin-top:16px;line-height:1.55;}
+  .money-line{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;margin-top:4px;}
+  .money-line .k{color:var(--muted);font-size:12.5px;display:block;}
+  .money-line .val{font-weight:600;}
+  .tag-status{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:.03em;}
+
+  /* ---------- tabelas ---------- */
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th{
+    text-align:left;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--muted);padding:0 14px 12px;border-bottom:1px solid var(--line);white-space:nowrap;
+  }
+  td{padding:16px 14px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  th:first-child,td:first-child{padding-left:0;}
+  th:last-child,td:last-child{padding-right:0;text-align:right;}
+  .t-right{text-align:right;}
+  th.t-right{text-align:right;}
+
+  /* ---------- métricas ---------- */
+  .grid-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin-bottom:18px;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px;margin:22px 0;}
+  .stat{background:var(--paper);border-radius:11px;padding:15px 17px;}
+  .stat .v{font-family:'Sora',sans-serif;font-size:19px;font-weight:600;letter-spacing:-0.02em;}
+  .stat .l{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .charts{display:flex;gap:36px;flex-wrap:wrap;margin-bottom:24px;}
+  .chart .l{font-size:12.5px;color:var(--muted);margin-bottom:6px;}
+
+  .ia-box{
+    background:var(--blue-soft);border:1px solid #D6E1FA;border-radius:12px;
+    padding:22px 24px;margin-top:22px;font-size:14.5px;line-height:1.75;white-space:pre-wrap;display:none;
+  }
+  .ia-box.show{display:block;}
+  .ia-box .h{
+    font-family:'Sora',sans-serif;font-weight:600;font-size:14px;color:var(--blue-dark);
+    margin-bottom:12px;letter-spacing:-0.01em;
+  }
+  .pulse{color:var(--blue);animation:pulse 1.3s ease-in-out infinite;}
+  @keyframes pulse{50%{opacity:.4;}}
+
+  /* ---------- tarefas ---------- */
+  .task{display:flex;gap:14px;align-items:flex-start;padding:16px 0;border-top:1px solid var(--line);}
+  .task:first-child{border-top:none;padding-top:0;}
+  .check{
+    width:21px;height:21px;border:1.8px solid var(--line-2);border-radius:7px;cursor:pointer;
+    flex-shrink:0;margin-top:2px;transition:all .15s;position:relative;background:var(--surface);
+  }
+  .check:hover{border-color:var(--green);}
+  .task.done .check{background:var(--green);border-color:var(--green);}
+  .task.done .check::after{
+    content:'';position:absolute;left:6.5px;top:3px;width:5px;height:10px;
+    border:solid #fff;border-width:0 2px 2px 0;transform:rotate(43deg);
+  }
+  .task.done .task-txt{text-decoration:line-through;color:var(--faint);}
+  .task-txt{font-size:14.5px;line-height:1.5;}
+  .task-meta{font-size:12.5px;color:var(--muted);margin-top:5px;display:flex;gap:12px;flex-wrap:wrap;}
+  .task-meta .late{color:var(--red);font-weight:600;}
+  .task-meta .today{color:var(--amber);font-weight:600;}
+  .x{
+    color:var(--faint);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;
+    background:none;border:none;font-family:inherit;
+  }
+  .x:hover{color:var(--red);}
+
+  /* ---------- log ---------- */
+  .log-row{padding:16px 0;border-top:1px solid var(--line);}
+  .log-row:first-child{border-top:none;padding-top:0;}
+  .log-meta{font-size:12.5px;color:var(--muted);margin-bottom:4px;display:flex;gap:10px;align-items:center;}
+  .log-meta b{color:var(--blue);font-weight:600;}
+  .log-meta .x{margin-left:auto;}
+
+  .empty{
+    color:var(--muted);font-size:14px;padding:34px;text-align:center;
+    border:1px dashed var(--line-2);border-radius:12px;background:var(--paper);
+  }
+
+  /* ---------- modais ---------- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(34,39,46,.32);backdrop-filter:blur(2px);
+    display:none;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;z-index:60;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--surface);border-radius:18px;width:100%;max-width:560px;padding:32px;
+    box-shadow:0 20px 60px rgba(34,39,46,.16);
+  }
+  .modal h3{margin-bottom:24px;}
+  .modal .field{margin-bottom:18px;}
+  .r2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .checkline{display:flex;gap:22px;padding-top:2px;}
+  .checkline label{display:flex;align-items:center;gap:9px;font-size:14.5px;cursor:pointer;}
+  .checkline input{width:auto;accent-color:var(--blue);}
+  .divider{
+    font-family:'Sora',sans-serif;font-size:13px;font-weight:600;color:var(--ink-2);
+    border-top:1px solid var(--line);padding-top:22px;margin:26px 0 18px;
+  }
+  .modal-foot{display:flex;justify-content:flex-end;gap:12px;margin-top:28px;flex-wrap:wrap;}
+  .modal-foot .left{margin-right:auto;}
+
+  /* ---------- toast ---------- */
+  #toast{
+    position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:13px 22px;border-radius:11px;font-size:14px;
+    opacity:0;pointer-events:none;transition:all .25s;z-index:90;max-width:90vw;text-align:center;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:760px){
+    .wrap{padding:30px 18px 90px;}
+    .acct-body{grid-template-columns:1fr;gap:18px;}
+    .acct-top{flex-direction:column;}
+    .r2{grid-template-columns:1fr;}
+    table{font-size:13px;}
+    .hide-sm{display:none;}
+  }
+
+  .login-wrap{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .login-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:18px;
+    padding:36px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(34,39,46,.08);
+  }
+  .login-card h1{margin-bottom:6px;}
+  .login-card .sub{margin-bottom:24px;}
+  .login-card .field{margin-bottom:16px;}
+  .login-error{color:var(--red);font-size:13.5px;margin-top:4px;min-height:18px;}
+  .login-card .btn{width:100%;justify-content:center;}
+  #app{display:none;}
+  .topbar-user{display:flex;align-items:center;gap:10px;}
+  .topbar-user .btn{padding:7px 14px;}
+  .loadscreen{min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;}
+</style>
+</head>
+<body>
+
+<div class="loadscreen" id="loadscreen">Carregando...</div>
+
+<div class="login-wrap" id="loginWrap" style="display:none;">
+  <div class="login-card">
+    <h1>Torre de Controle</h1>
+    <div class="sub">Entre com seu login do Supabase</div>
+    <label class="field"><span>Email</span><input type="email" id="loginEmail" autocomplete="username"></label>
+    <label class="field"><span>Senha</span><input type="password" id="loginSenha" autocomplete="current-password"></label>
+    <div class="login-error" id="loginErro"></div>
+    <button class="btn btn-primary" id="btnLogin">Entrar</button>
+  </div>
+</div>
+
+<div id="app">
+<div class="wrap">
+
+  <header>
+    <div class="title-row">
+      <div>
+        <h1>Torre de Controle</h1>
+        <div class="date" id="hoje"></div>
+      </div>
+      <div class="head-actions topbar-user">
+        <span class="sub" id="userEmail"></span>
+        <button class="btn btn-ghost btn-sm" id="btnLogout">Sair</button>
+      </div>
+    </div>
+    <div class="notices" id="notices"></div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="dash">Visão geral</button>
+    <button class="tab" data-tab="contas">Contas</button>
+    <button class="tab" data-tab="verba">Verba</button>
+    <button class="tab" data-tab="metricas">Métricas</button>
+    <button class="tab" data-tab="tarefas">Tarefas<span class="count" id="taskCount" style="display:none;"></span></button>
+    <button class="tab" data-tab="log">Registro</button>
+  </nav>
+
+  <!-- VISÃO GERAL -->
+  <section id="v-dash">
+    <div class="kpis" id="kpis"></div>
+    <div class="card">
+      <div class="card-head">
+        <h2>Radar do dia</h2>
+        <span class="sub">o que precisa de você agora</span>
+      </div>
+      <div id="radar"></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <h2>Leitura da carteira</h2>
+        <button class="btn btn-primary btn-sm" id="btnIaCarteira">Analisar tudo</button>
+      </div>
+      <p class="sub" style="margin:0;">Cruza status, verbas, tarefas e métricas recentes de todas as contas e devolve as prioridades do dia.</p>
+      <div class="ia-box" id="iaCarteira"><div class="h">Diagnóstico da carteira</div><div id="iaCarteiraTxt"></div></div>
+    </div>
+  </section>
+
+  <!-- CONTAS -->
+  <section id="v-contas" hidden>
+    <div class="filters">
+      <div class="seg" id="fPlat">
+        <button class="on" data-v="todas">Todas</button>
+        <button data-v="google">Google</button>
+        <button data-v="meta">Meta</button>
+      </div>
+      <div class="seg" id="fCart">
+        <button class="on" data-v="todas">Carteira toda</button>
+        <button data-v="Digital Xpert">Digital Xpert</button>
+        <button data-v="Direto">Direto</button>
+      </div>
+      <input class="search" id="busca" placeholder="Buscar conta">
+      <button class="btn btn-primary" id="btnNova">Nova conta</button>
+    </div>
+    <div id="listaContas"></div>
+  </section>
+
+  <!-- VERBA -->
+  <section id="v-verba" hidden>
+    <div class="card">
+      <div class="card-head">
+        <h2>Saldo e recargas</h2>
+      </div>
+      <p class="sub" style="margin:0 0 24px;">Informe o saldo lido no Google Ads e o painel projeta quantos dias faltam pra zerar, usando o ritmo real de gasto. Ao mandar o Pix, registre pelo botão que o saldo é somado sozinho.</p>
+      <table>
+        <thead><tr>
+          <th>Conta</th><th>Pagamento</th><th class="t-right">Verba/dia</th>
+          <th class="t-right">Saldo</th><th class="t-right">Autonomia</th>
+          <th class="t-right hide-sm">Recarga usual</th><th>Situação</th><th></th>
+        </tr></thead>
+        <tbody id="tbVerba"></tbody>
+      </table>
+      <div class="sub" id="ultimasRecargas" style="margin-top:20px;font-size:13px;"></div>
+    </div>
+  </section>
+
+  <!-- MÉTRICAS -->
+  <section id="v-metricas" hidden>
+    <div class="card">
+      <div class="card-head"><h2>Lançar métricas</h2></div>
+      <div class="grid-form">
+        <label class="field" style="grid-column:span 2;"><span>Conta</span><select id="mConta"></select></label>
+        <label class="field"><span>Plataforma</span><select id="mPlat"><option value="google">Google</option><option value="meta">Meta</option></select></label>
+        <label class="field"><span>Data</span><input type="date" id="mData"></label>
+      </div>
+      <div class="grid-form">
+        <label class="field"><span>Investimento</span><input type="number" step="0.01" id="mInvest" placeholder="R$"></label>
+        <label class="field"><span>Impressões</span><input type="number" id="mImpr"></label>
+        <label class="field"><span>Cliques</span><input type="number" id="mCliques"></label>
+        <label class="field"><span>Conversões</span><input type="number" step="0.1" id="mConv"></label>
+      </div>
+      <label class="field" style="margin-bottom:22px;"><span>Observação do dia</span><input type="text" id="mObs" placeholder="opcional: o que mudou nesse dia"></label>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btnLancar">Lançar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Histórico</h2></div>
+      <div class="grid-form" style="align-items:end;">
+        <label class="field" style="grid-column:span 2;"><span>Conta</span><select id="hConta"></select></label>
+        <label class="field"><span>Período</span>
+          <select id="hPeriodo">
+            <option value="7">7 dias</option><option value="14">14 dias</option>
+            <option value="30" selected>30 dias</option><option value="999">Tudo</option>
+          </select>
+        </label>
+        <label class="field"><span>Plataforma</span>
+          <select id="hPlat"><option value="">Todas</option><option value="google">Google</option><option value="meta">Meta</option></select>
+        </label>
+        <div><button class="btn btn-primary" id="btnIaConta" style="width:100%;">Análise IA</button></div>
+      </div>
+      <div id="stats"></div>
+      <div id="charts"></div>
+      <div id="tabelaMetricas"></div>
+      <div class="ia-box" id="iaConta"><div class="h">Análise da conta</div><div id="iaContaTxt"></div></div>
+    </div>
+  </section>
+
+  <!-- TAREFAS -->
+  <section id="v-tarefas" hidden>
+    <div class="card">
+      <div class="card-head"><h2>Nova tarefa</h2></div>
+      <div class="grid-form">
+        <label class="field" style="grid-column:span 2;"><span>O que fazer</span><input type="text" id="tDesc" placeholder="ex: aplicar negativas na SBS"></label>
+        <label class="field"><span>Conta</span><select id="tConta"></select></label>
+        <label class="field"><span>Prazo</span><input type="date" id="tPrazo"></label>
+        <label class="field"><span>Prioridade</span><select id="tPrio"><option value="alta">Alta</option><option value="media" selected>Média</option><option value="baixa">Baixa</option></select></label>
+      </div>
+      <button class="btn btn-primary" id="btnAddTarefa">Adicionar</button>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Pendentes</h2></div>
+      <div id="tarefasPend"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Concluídas</h2><span class="sub">últimas 15</span></div>
+      <div id="tarefasFeitas"></div>
+    </div>
+  </section>
+
+  <!-- LOG -->
+  <section id="v-log" hidden>
+    <div class="card">
+      <div class="card-head"><h2>Registrar otimização</h2></div>
+      <div class="grid-form">
+        <label class="field"><span>Conta</span><select id="lConta"></select></label>
+        <label class="field"><span>Data</span><input type="date" id="lData"></label>
+        <label class="field" style="grid-column:span 2;"><span>O que foi feito</span><input type="text" id="lTexto" placeholder="ex: pausei o grupo Avaliação e apliquei 12 negativas"></label>
+      </div>
+      <button class="btn btn-primary" id="btnAddLog">Registrar</button>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Histórico de mudanças</h2></div>
+      <label class="field" style="max-width:260px;margin-bottom:22px;"><span>Filtrar</span><select id="lFiltro"></select></label>
+      <div id="listaLog"></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- MODAL CONTA -->
+<div class="overlay" id="ovConta"><div class="modal">
+  <h3 id="tituloConta">Nova conta</h3>
+  <div class="r2">
+    <label class="field"><span>Cliente</span><input type="text" id="fCliente"></label>
+    <label class="field"><span>Nicho</span><input type="text" id="fNicho"></label>
+  </div>
+  <div class="r2">
+    <label class="field"><span>Praça</span><input type="text" id="fPraca" placeholder="ex: Curitiba - PR"></label>
+    <label class="field"><span>ID conta Google Ads</span><input type="text" id="fContaId" placeholder="ex: 674-109-0805"></label>
+  </div>
+  <label class="field"><span>ID conta Meta Ads</span><input type="text" id="fMetaContaId" placeholder="ex: 595473060312437"></label>
+  <div class="r2">
+    <label class="field"><span>Início da gestão</span><input type="date" id="fInicio"></label>
+    <label class="field"><span>CPA alvo</span><input type="number" step="0.01" id="fCpaAlvo" placeholder="R$"></label>
+  </div>
+  <div class="r2">
+    <label class="field"><span>Carteira</span><select id="fCarteira"><option>Digital Xpert</option><option>Direto</option></select></label>
+    <label class="field"><span>Prioridade</span><select id="fPrio"><option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option></select></label>
+  </div>
+  <label class="field"><span>Plataformas</span>
+    <div class="checkline">
+      <label><input type="checkbox" id="fGoogle"> Google Ads</label>
+      <label><input type="checkbox" id="fMeta"> Meta Ads</label>
+    </div>
+  </label>
+  <label class="field"><span>Status</span><select id="fStatus">
+    <option value="critico">Crítico</option><option value="atencao">Atenção</option>
+    <option value="ativo">Rodando bem</option><option value="setup">Em setup</option>
+    <option value="standby">Standby</option>
+  </select></label>
+  <label class="field"><span>Próxima ação</span><textarea id="fAcao"></textarea></label>
+  <label class="field"><span>Notas</span><textarea id="fNotas"></textarea></label>
+  <div class="divider">Verba e pagamento</div>
+  <div class="r2">
+    <label class="field"><span>Forma de pagamento</span><select id="fForma">
+      <option value="">Não definido</option><option value="pix">Pix (manual)</option><option value="cartao">Cartão (automático)</option>
+    </select></label>
+    <label class="field"><span>Verba diária</span><input type="number" step="0.01" id="fVerba" placeholder="R$"></label>
+  </div>
+  <div class="r2">
+    <label class="field"><span>Saldo atual</span><input type="number" step="0.01" id="fSaldo" placeholder="fundos disponíveis"></label>
+    <label class="field"><span>Saldo lido em</span><input type="date" id="fSaldoData"></label>
+  </div>
+  <div class="r2">
+    <label class="field"><span>Dia da recarga</span><input type="number" min="1" max="31" id="fDiaPgto" placeholder="opcional"></label>
+    <label class="field"><span>Valor usual</span><input type="number" step="0.01" id="fValorPgto" placeholder="R$"></label>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-danger left" id="btnExcluir" style="display:none;">Excluir conta</button>
+    <button class="btn btn-ghost" id="btnCancelaConta">Cancelar</button>
+    <button class="btn btn-primary" id="btnSalvaConta">Salvar</button>
+  </div>
+</div></div>
+
+<!-- MODAL PIX -->
+<div class="overlay" id="ovPix"><div class="modal" style="max-width:400px;">
+  <h3>Registrar recarga</h3>
+  <p class="sub" id="pixQual" style="margin:-14px 0 22px;"></p>
+  <label class="field"><span>Valor enviado</span><input type="number" step="0.01" id="pixValor" placeholder="R$"></label>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" id="btnCancelaPix">Cancelar</button>
+    <button class="btn btn-primary" id="btnConfirmaPix">Somar ao saldo</button>
+  </div>
+</div></div>
+
+<!-- MODAL CONFIRMA -->
+<div class="overlay" id="ovConfirma"><div class="modal" style="max-width:400px;">
+  <h3 id="confTitulo">Confirmar</h3>
+  <p class="sub" id="confTexto" style="margin:-14px 0 8px;"></p>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" id="btnConfNao">Cancelar</button>
+    <button class="btn btn-danger" id="btnConfSim">Confirmar</button>
+  </div>
+</div></div>
+
+<div id="toast"></div>
+</div><!-- /#app -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://phnduppmbrnxfgwproqz.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBobmR1cHBtYnJueGZnd3Byb3F6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4NDI1NDAsImV4cCI6MjEwMTQxODU0MH0.wucr24XSAPmiHURooFx3PeRy3XBXj4Miw7oOo0T7rYI';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const SEED=[
+  {codigo:'DX-01',cliente:'MinutosAuto',metaContaId:'1451789890024231',statusGoogle:'limitada',statusMeta:'ativa',praca:'Guarapuava - PR',inicio:'2026-07-16',cpaAlvo:40,contaId:'949-662-1878',carteira:'Digital Xpert',nicho:'Veículos',plataformas:['google','meta'],status:'critico',prioridade:'alta',acao:'Tracking quebrado: 31/07 a 03/08 deu R$74,51 e 17 cliques com ZERO conversão. Validar tags antes de mexer em qualquer outra coisa',notas:'Piloto do funil calculadora FIPE; gargalo identificado é atendimento, não mídia. Jul: R$752,06 gastos / R$1.200 pagos',forma:'pix',verbaDiaria:36.25,diaPgto:null,valorPgto:600,saldo:420.08,saldoData:'2026-08-02'},
+  {codigo:'DX-02',cliente:'Fast Bacacheri',metaContaId:'595473060312437',statusGoogle:'limitada',statusMeta:'ativa',praca:'Curitiba - PR',inicio:'2026-06-13',cpaAlvo:40,contaId:'674-109-0805',carteira:'Digital Xpert',nicho:'Veículos',plataformas:['google','meta'],status:'atencao',prioridade:'alta',acao:'Mandar Pix: campanha marcada como limitada pelo orçamento mas gastando só R$6 no dia 02, sinal de saldo travando a entrega',notas:'Site reconstruído do zero, tracking corrigido. Jul: R$1.191,12 gastos / R$350 pagos; Jun: R$232,07 / R$1.250',forma:'pix',verbaDiaria:35,diaPgto:null,valorPgto:350,saldo:122.76,saldoData:'2026-08-02'},
+  {codigo:'DX-03',cliente:'Vaapty Juiz de Fora Norte',statusGoogle:'limitada',statusMeta:'ativa',praca:'Juiz de Fora - MG',inicio:'2026-07-16',cpaAlvo:40,contaId:'885-349-0639',carteira:'Digital Xpert',nicho:'Veículos',plataformas:['google','meta'],status:'critico',prioridade:'alta',acao:'Pix urgente (2 dias de saldo) + corrigir qualidade do anúncio: CPA subiu de R$8 para R$53 em 3 dias',notas:'Referência de sucesso do nicho. Recarga automática desativada. Jul: R$480,17 gastos / R$750 pagos',forma:'pix',verbaDiaria:50,diaPgto:null,valorPgto:400,saldo:136.04,saldoData:'2026-08-02'},
+  {codigo:'DX-04',cliente:'Vaapty São Bento do Sul',statusGoogle:'limitada',statusMeta:'ativa',praca:'São Bento do Sul - SC',inicio:'2026-07-17',cpaAlvo:40,contaId:'213-734-1278',carteira:'Digital Xpert',nicho:'Veículos',plataformas:['google','meta'],status:'atencao',prioridade:'media',acao:'Entender a queda de entrega (R$54 no dia 01 para R$5,94 no dia 02) e revisar o orçamento de R$160/dia que nunca é usado',notas:'Negativas pendentes: litoral car, jb carros, auto7class, vaapty, quanto custa. Recarga automática desativada. Jul: R$876,86 gastos / R$1.600 pagos',forma:'pix',verbaDiaria:160,diaPgto:null,valorPgto:1600,saldo:639.48,saldoData:'2026-08-02'},
+  {codigo:'DX-05',cliente:'Vaapty Taboão da Serra',statusGoogle:'aprendizado',praca:'Taboão da Serra - SP',inicio:'2026-07-30',cpaAlvo:40,contaId:'262-069-2580',carteira:'Digital Xpert',nicho:'Veículos',plataformas:['google'],status:'atencao',prioridade:'alta',acao:'Auditar as conversões: 15 conv em 19 cliques no dia 01 (78,9%) indica conversão poluída contando pageview ou ver rota',notas:'Pagamento no cartão Mastercard final 2941. Último pagamento 30/jul R$1.520. É a conta de maior ritmo de gasto',forma:'cartao',verbaDiaria:100,diaPgto:null,valorPgto:null,saldo:1077.77,saldoData:'2026-08-02'},
+  {codigo:'DX-06',cliente:'Vaapty Uberaba',statusGoogle:'aprendizado',contaId:'',carteira:'Digital Xpert',nicho:'Veículos',plataformas:['google'],status:'setup',prioridade:'alta',acao:'Finalizar setup do GTM em paralelo à campanha',notas:'Campanha subida seguindo playbook v2.0',forma:'',verbaDiaria:null,diaPgto:null,valorPgto:null,saldo:null,saldoData:''},
+  {codigo:'DX-07',cliente:'Vaapty Itajaí',contaId:'',carteira:'Digital Xpert',nicho:'Veículos',plataformas:['google'],status:'standby',prioridade:'media',acao:'Decidir criação de conta nova (cliente não enviou os docs da 2ª contestação)',notas:'Cliente de alto orçamento; contas antigas suspensas, contestação travada por falta de documentos',forma:'',verbaDiaria:null,diaPgto:null,valorPgto:null,saldo:null,saldoData:''},
+  {codigo:'DX-08',cliente:'Vende Auto Já',statusMeta:'ativa',praca:'Camboriú - SC',cpaAlvo:20,contaId:'1541...',carteira:'Digital Xpert',nicho:'Veículos',plataformas:['meta'],status:'ativo',prioridade:'media',acao:'Escalar o CT1 (R$3,73/conversa) e substituir o CT2 (R$24,22/conversa)',notas:'Única conta 100% de Matheus em Meta Ads, no cartão. 30 dias: CT1 16 conversas a R$3,73; CT2 2 conversas a R$24,22; CT3 desativado. Orçamento R$30/dia por conjunto',forma:'cartao',verbaDiaria:60,diaPgto:null,valorPgto:null,saldo:null,saldoData:''},
+  {codigo:'MR-01',cliente:'EcommUp',statusMeta:'sem_config',contaId:'',carteira:'Direto',nicho:'E-commerce (Shopee)',plataformas:['meta'],status:'setup',prioridade:'media',acao:'Subir campanha de captação com verba curta',notas:'Assessoria de gestão de lojas na Shopee',forma:'',verbaDiaria:null,diaPgto:null,valorPgto:null,saldo:null,saldoData:''},
+  {codigo:'MR-02',cliente:'Ferro Elegance',statusGoogle:'sem_config',contaId:'',carteira:'Direto',nicho:'Construção modular',plataformas:['google'],status:'setup',prioridade:'alta',acao:'Montar landing page e subir os anúncios',notas:'Verba R$2.000 no 1º mês; comissão de 0,5% por venda',forma:'',verbaDiaria:66.67,diaPgto:null,valorPgto:2000,saldo:null,saldoData:''},
+  {codigo:'MR-03',cliente:'Marocco Academy',statusMeta:'ativa',contaId:'',carteira:'Direto',nicho:'Cursos (micropigmentação)',plataformas:['meta'],status:'ativo',prioridade:'baixa',acao:'Subir próxima cidade do ciclo',notas:'1 curso por fim de semana, 2-3 cidades simultâneas',forma:'',verbaDiaria:null,diaPgto:null,valorPgto:null,saldo:null,saldoData:''},
+  {codigo:'MR-04',cliente:'Na Casa Pizzaria',statusMeta:'ativa',contaId:'',carteira:'Direto',nicho:'Alimentação',plataformas:['meta'],status:'atencao',prioridade:'alta',acao:'Trocar o criativo improvisado antes de quinta (campanha WhatsApp já programada)',notas:'Campanha de WhatsApp subida e agendada; roda sexta a domingo 18:30-23:00',forma:'',verbaDiaria:null,diaPgto:null,valorPgto:null,saldo:null,saldoData:''}
+];
+
+/* metricas ja lancadas a partir dos relatorios de campanha do Google Ads (30/07 a 03/08) */
+const SEED_METRICS={
+  'DX-01':[
+    {data:'2026-07-16',plat:'google',invest:2.79,impr:14,cliques:1,conv:0.0,obs:''},
+    {data:'2026-07-17',plat:'google',invest:24.86,impr:175,cliques:5,conv:0.0,obs:''},
+    {data:'2026-07-18',plat:'google',invest:72.38,impr:251,cliques:11,conv:4.0,obs:''},
+    {data:'2026-07-19',plat:'google',invest:52.67,impr:183,cliques:8,conv:1.0,obs:''},
+    {data:'2026-07-20',plat:'google',invest:37.59,impr:82,cliques:8,conv:0.0,obs:''},
+    {data:'2026-07-21',plat:'google',invest:55.56,impr:104,cliques:13,conv:0.0,obs:''},
+    {data:'2026-07-23',plat:'google',invest:47.92,impr:99,cliques:7,conv:0.0,obs:''},
+    {data:'2026-07-24',plat:'google',invest:29.95,impr:49,cliques:5,conv:1.0,obs:''},
+    {data:'2026-07-25',plat:'google',invest:10.88,impr:72,cliques:3,conv:0.0,obs:''},
+    {data:'2026-07-26',plat:'google',invest:14.47,impr:79,cliques:2,conv:0.0,obs:''},
+    {data:'2026-07-27',plat:'google',invest:93.93,impr:204,cliques:11,conv:0.0,obs:'Campanha nova C02 | Avaliação FIPE no ar, rodando junto com a C01.'},
+    {data:'2026-07-28',plat:'google',invest:31.57,impr:97,cliques:6,conv:2.0,obs:'Só a C01 aparece no relatório. Efeito da pausa da keyword \'venda carros\'.'},
+    {data:'2026-07-29',plat:'google',invest:33.09,impr:29,cliques:2,conv:0.0,obs:'Só 2 cliques no dia. CPC médio R$16,55.'},
+    {data:'2026-07-30',plat:'google',invest:31.21,impr:60,cliques:5,conv:0.0,obs:'Terceiro dia seguido com custo travado em ~R$31 e conversão baixa.'},
+    {data:'2026-07-31',plat:'google',invest:18.63,impr:89,cliques:4,conv:0.0,obs:'Média do relatório agregado 31/07 a 03/08'},
+    {data:'2026-08-01',plat:'google',invest:18.63,impr:89,cliques:4,conv:0.0,obs:'Média do relatório agregado 31/07 a 03/08'},
+    {data:'2026-08-02',plat:'google',invest:18.63,impr:89,cliques:4,conv:0.0,obs:'Média do relatório agregado 31/07 a 03/08'},
+    {data:'2026-08-03',plat:'google',invest:18.63,impr:89,cliques:4,conv:0.0,obs:'Média do relatório agregado 31/07 a 03/08'},
+    {data:'2026-08-02',plat:'meta',invest:7163.78,impr:656842,cliques:0,conv:514,obs:'Resumo Meta 04/07-02/08 (relatorio de campanhas, agregado por campanha, sem quebra diaria)'}
+  ],
+  'DX-02':[
+    {data:'2026-07-18',plat:'google',invest:36.83,impr:3030,cliques:70,conv:1.0,obs:''},
+    {data:'2026-07-19',plat:'google',invest:79.51,impr:1699,cliques:83,conv:2.0,obs:''},
+    {data:'2026-07-20',plat:'google',invest:47.96,impr:1333,cliques:45,conv:2.32,obs:'Conversões incluindo projeções'},
+    {data:'2026-07-21',plat:'google',invest:40.68,impr:1498,cliques:43,conv:1.0,obs:'Conversão pendente'},
+    {data:'2026-07-23',plat:'google',invest:38.2,impr:1672,cliques:42,conv:0.0,obs:''},
+    {data:'2026-07-24',plat:'google',invest:48.19,impr:1394,cliques:47,conv:0.0,obs:''},
+    {data:'2026-07-25',plat:'google',invest:25.39,impr:1604,cliques:28,conv:1.0,obs:''},
+    {data:'2026-07-26',plat:'google',invest:58.25,impr:1509,cliques:57,conv:1.0,obs:''},
+    {data:'2026-07-27',plat:'google',invest:40.11,impr:699,cliques:27,conv:0.0,obs:'Nova campanha SEARCH | Vender Carro | Curitiba no ar (Max. conversões). C01 em paralelo.'},
+    {data:'2026-07-28',plat:'google',invest:83.16,impr:1443,cliques:51,conv:1.0,obs:'C01 (R$28,30) + SEARCH nova (R$54,86) rodando em paralelo.'},
+    {data:'2026-07-29',plat:'google',invest:37.48,impr:347,cliques:13,conv:3.0,obs:'C01 praticamente zerada. SEARCH nova com 3 conversões a R$11,66.'},
+    {data:'2026-07-30',plat:'google',invest:39.72,impr:129,cliques:9,conv:3.0,obs:'Só a SEARCH nova veiculando. CPA R$13,24.'},
+    {data:'2026-07-31',plat:'google',invest:19.43,impr:161,cliques:8,conv:3.0,obs:''},
+    {data:'2026-08-01',plat:'google',invest:26.03,impr:98,cliques:6,conv:2.0,obs:''},
+    {data:'2026-08-02',plat:'google',invest:6.37,impr:59,cliques:2,conv:0.0,obs:''},
+    {data:'2026-08-04',plat:'meta',invest:7817.49,impr:0,cliques:0,conv:0,obs:'Total cobrado Meta Ads 01/07-04/08 (fatura); sem dado de conversao disponivel ainda pra essa conta'}
+  ],
+  'DX-03':[
+    {data:'2026-07-17',plat:'google',invest:59.93,impr:255,cliques:21,conv:2.0,obs:''},
+    {data:'2026-07-18',plat:'google',invest:36.41,impr:379,cliques:12,conv:0.0,obs:''},
+    {data:'2026-07-19',plat:'google',invest:40.62,impr:353,cliques:13,conv:0.0,obs:''},
+    {data:'2026-07-20',plat:'google',invest:31.39,impr:268,cliques:14,conv:2.0,obs:''},
+    {data:'2026-07-21',plat:'google',invest:31.55,impr:54,cliques:8,conv:3.0,obs:''},
+    {data:'2026-07-22',plat:'google',invest:33.8,impr:96,cliques:5,conv:4.0,obs:''},
+    {data:'2026-07-23',plat:'google',invest:26.32,impr:64,cliques:9,conv:4.0,obs:''},
+    {data:'2026-07-24',plat:'google',invest:25.61,impr:47,cliques:8,conv:1.0,obs:''},
+    {data:'2026-07-25',plat:'google',invest:29.56,impr:28,cliques:9,conv:5.0,obs:''},
+    {data:'2026-07-26',plat:'google',invest:21.2,impr:24,cliques:4,conv:0.0,obs:''},
+    {data:'2026-07-27',plat:'google',invest:28.65,impr:88,cliques:10,conv:1.0,obs:''},
+    {data:'2026-07-28',plat:'google',invest:39.39,impr:74,cliques:7,conv:2.0,obs:'Grupo 1 Vender Carro com as 2 conversões. Grupo 2 JF sem conversão.'},
+    {data:'2026-07-29',plat:'google',invest:42.85,impr:89,cliques:13,conv:1.0,obs:''},
+    {data:'2026-07-30',plat:'google',invest:16.62,impr:81,cliques:3,conv:2.0,obs:'Volume baixo (3 cliques). Grupo 2 JF converteu as 2.'},
+    {data:'2026-07-31',plat:'google',invest:16.31,impr:110,cliques:8,conv:2.0,obs:''},
+    {data:'2026-08-01',plat:'google',invest:58.8,impr:111,cliques:11,conv:2.0,obs:''},
+    {data:'2026-08-02',plat:'google',invest:53.08,impr:36,cliques:7,conv:1.0,obs:''},
+    {data:'2026-08-02',plat:'meta',invest:3207.78,impr:273572,cliques:0,conv:252,obs:'Resumo Meta 04/07-02/08 (relatorio de campanhas, agregado por campanha, sem quebra diaria)'}
+  ],
+  'DX-04':[
+    {data:'2026-07-17',plat:'google',invest:59.2,impr:32,cliques:6,conv:0.0,obs:''},
+    {data:'2026-07-18',plat:'google',invest:35.76,impr:91,cliques:6,conv:1.0,obs:''},
+    {data:'2026-07-19',plat:'google',invest:4.03,impr:61,cliques:1,conv:0.0,obs:''},
+    {data:'2026-07-20',plat:'google',invest:58.4,impr:232,cliques:10,conv:2.0,obs:''},
+    {data:'2026-07-21',plat:'google',invest:111.96,impr:84,cliques:8,conv:3.0,obs:''},
+    {data:'2026-07-22',plat:'google',invest:93.48,impr:64,cliques:4,conv:0.0,obs:''},
+    {data:'2026-07-23',plat:'google',invest:40.52,impr:128,cliques:5,conv:0.0,obs:''},
+    {data:'2026-07-24',plat:'google',invest:26.58,impr:41,cliques:1,conv:0.0,obs:''},
+    {data:'2026-07-25',plat:'google',invest:70.31,impr:131,cliques:14,conv:1.0,obs:''},
+    {data:'2026-07-26',plat:'google',invest:95.02,impr:79,cliques:6,conv:1.0,obs:''},
+    {data:'2026-07-27',plat:'google',invest:19.35,impr:61,cliques:4,conv:1.0,obs:'Campanha antiga pausada; verba consolidada na SEARCH | Vender Carro | São Bento do Sul (CPA alvo R$40).'},
+    {data:'2026-07-28',plat:'google',invest:103.78,impr:83,cliques:13,conv:5.0,obs:'Primeiro dia cheio só com a campanha nova. CPA R$20,76.'},
+    {data:'2026-07-29',plat:'google',invest:61.61,impr:121,cliques:10,conv:3.0,obs:''},
+    {data:'2026-07-30',plat:'google',invest:76.22,impr:82,cliques:12,conv:7.0,obs:'Melhor dia da conta: 7 conversões a CPA R$10,89.'},
+    {data:'2026-07-31',plat:'google',invest:20.69,impr:35,cliques:5,conv:0.0,obs:''},
+    {data:'2026-08-01',plat:'google',invest:54.09,impr:48,cliques:6,conv:2.0,obs:''},
+    {data:'2026-08-02',plat:'google',invest:5.94,impr:28,cliques:2,conv:0.0,obs:''},
+    {data:'2026-08-02',plat:'meta',invest:20471.39,impr:1581918,cliques:0,conv:862,obs:'Resumo Meta 04/07-02/08 (relatorio de campanhas, agregado por campanha, sem quebra diaria)'}
+  ],
+  'DX-05':[
+    {data:'2026-07-30',plat:'google',invest:119.86,impr:70,cliques:7,conv:1.0,obs:''},
+    {data:'2026-07-31',plat:'google',invest:80.0,impr:123,cliques:16,conv:3.0,obs:''},
+    {data:'2026-08-01',plat:'google',invest:98.63,impr:134,cliques:19,conv:15.0,obs:''},
+    {data:'2026-08-02',plat:'google',invest:116.13,impr:321,cliques:12,conv:4.0,obs:''}
+  ]
+};
+
+const SEED_LOGS=[
+  {cod:'DX-03',data:'2026-07-16',texto:'Setup inicial: tracking padrão, campanha de pesquisa criada (1 grupo de palavras-chave), Google Meu Negócio vi'},
+  {cod:'DX-01',data:'2026-07-16',texto:'Setup inicial: tracking padrão, campanha de pesquisa criada (3 grupos de palavras-chave + amplas), Google Meu '},
+  {cod:'DX-02',data:'2026-07-17',texto:'Correção de títulos dos anúncios. Pausada a campanha de pior performance (C02) e reajuste de verba. Remoção e '},
+  {cod:'DX-04',data:'2026-07-17',texto:'Setup inicial: tracking padrão, campanha de pesquisa criada (6 grupos de palavras-chave), Google Meu Negócio v'},
+  {cod:'DX-03',data:'2026-07-20',texto:'Definido orçamento semanal de R$200.'},
+  {cod:'DX-01',data:'2026-07-20',texto:'Adicionadas 30 palavras-chave em correspondência de frase. Negativadas palavras-chave sem conversão.'},
+  {cod:'DX-04',data:'2026-07-20',texto:'Adicionadas 34 palavras-chave em correspondência de frase.'},
+  {cod:'DX-03',data:'2026-07-21',texto:'Estratégia de lances alterada para Maximizar conversões. Reestruturação em 2 grupos (Genérico + JF/Marca/Finan'},
+  {cod:'DX-01',data:'2026-07-21',texto:'Corrigido wa.me do site. Adicionado Apps Script para o formulário. Correção de palavras-chave (removido grupo '},
+  {cod:'DX-02',data:'2026-07-22',texto:'Diagnóstico do tracking: GTM com acionadores incorretos e script conflitando com o clique de WhatsApp. Decisão'},
+  {cod:'DX-01',data:'2026-07-22',texto:'Pausadas as keywords em ampla (torravam a verba). Pausados os grupos Avaliação e Troca. Criado o grupo Vender '},
+  {cod:'DX-04',data:'2026-07-22',texto:'Reestruturação com base no benchmark do nicho: negativadas moto/motos e lista padrão de negativas de campanha;'},
+  {cod:'DX-04',data:'2026-07-24',texto:'Decisão de replicar a estrutura enxuta da Juiz de Fora Norte (2 grupos, mesmas negativas de campanha, mesmo pa'},
+  {cod:'DX-02',data:'2026-07-27',texto:'Site novo no ar (HTML) com GTM novo. Tags de conversão validadas no Tag Assistant. Conversões reorganizadas (p'},
+  {cod:'DX-01',data:'2026-07-27',texto:'Campanha nova C02 | Avaliação FIPE subida (Max. conversões), como piloto do funil de calculadora FIPE.'},
+  {cod:'DX-04',data:'2026-07-27',texto:'Campanha antiga (Vaapty SBS) pausada; orçamento consolidado na campanha nova SEARCH | Vender Carro | São Bento'},
+  {cod:'DX-02',data:'2026-07-28',texto:'Análise de termos e palavras-chave (19-28/07): identificadas keywords zeradas na C01 (carros usados, comprar c'},
+  {cod:'DX-01',data:'2026-07-28',texto:'Análise de termos e palavras-chave (21-27/07): keyword \'venda carros\' (frase) pausada por consumir R$147,19 '},
+  {cod:'DX-02',data:'2026-07-29',texto:'C01 pausada. A SEARCH | Vender Carro | Curitiba passou a receber 100% da verba.'},
+  {cod:'DX-01',data:'2026-07-29',texto:'Página quanto-vale-meu-carro refeita com gate de conversão: valor FIPE borrado com cadeado, liberado só após i'},
+  {cod:'DX-01',data:'2026-07-30',texto:'Análise 15-30/07: ~R$3,6 mil investidos, ~311 leads, CPL ~R$12,70, 5 carros fechados (4 de recuperação de lead'},
+  {cod:'DX-05',data:'2026-07-30',texto:'Setup do rastreamento: recuperado o acesso ao GTM já instalado no site da franquia (GTM-K73CSRSM), container n'}
+];
+
+const ORDEM=['critico','atencao','setup','ativo','standby'];
+const ROTULO={critico:'Precisa de ação agora',atencao:'Em observação',setup:'Em setup',ativo:'Rodando bem',standby:'Standby'};
+const COR={critico:'var(--red)',atencao:'var(--amber)',setup:'var(--blue)',ativo:'var(--green)',standby:'var(--gray)'};
+const STATUS_PLAT={ativa:'Ativa',pausada:'Pausada',limitada:'Limitada',aprendizado:'Aprendizado',suspensa:'Suspensa',sem_config:'Não configurada'};
+
+let contas=[],metricas={},tarefas=[],registros=[],recargas=[],resolvidos={};
+let editando=null,filtroPlat='todas',filtroCart='todas',pixAlvo=null,confirmaFn=null;
+
+const $=id=>document.getElementById(id);
+const brl=n=>n==null||isNaN(n)?'':Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const hojeISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const dBR=s=>s?s.split('-').reverse().join('/'):'';
+const dCurta=s=>s?s.split('-').reverse().slice(0,2).join('/'):'';
+const esc=s=>(s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function toast(msg){
+  const t=$('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);
+}
+function pedirConfirmacao(titulo,texto,fn){
+  $('confTitulo').textContent=titulo;$('confTexto').textContent=texto;
+  confirmaFn=fn;$('ovConfirma').classList.add('open');
+}
+
+/* ===================== mapeamento DB <-> JS ===================== */
+const rowToConta=r=>({id:r.id,codigo:r.codigo,cliente:r.cliente,carteira:r.carteira,nicho:r.nicho,praca:r.praca,
+  contaId:r.conta_id,metaContaId:r.meta_conta_id,plataformas:r.plataformas||[],status:r.status,
+  statusGoogle:r.status_google,statusMeta:r.status_meta,prioridade:r.prioridade,acao:r.acao,notas:r.notas,
+  forma:r.forma,verbaDiaria:r.verba_diaria,saldo:r.saldo,saldoData:r.saldo_data,diaPgto:r.dia_pgto,
+  valorPgto:r.valor_pgto,cpaAlvo:r.cpa_alvo,inicio:r.inicio});
+const contaToRow=a=>({codigo:a.codigo,cliente:a.cliente,carteira:a.carteira,nicho:a.nicho||null,praca:a.praca||null,
+  conta_id:a.contaId||null,meta_conta_id:a.metaContaId||null,plataformas:a.plataformas||[],status:a.status,
+  status_google:a.statusGoogle||null,status_meta:a.statusMeta||null,prioridade:a.prioridade,acao:a.acao||null,
+  notas:a.notas||null,forma:a.forma||null,verba_diaria:a.verbaDiaria,saldo:a.saldo,saldo_data:a.saldoData||null,
+  dia_pgto:a.diaPgto,valor_pgto:a.valorPgto,cpa_alvo:a.cpaAlvo,inicio:a.inicio||null});
+const rowToMetric=r=>({id:r.id,data:r.data,plat:r.plat,invest:Number(r.invest),impr:r.impr,cliques:r.cliques,conv:Number(r.conv),obs:r.obs});
+const rowToTask=r=>({id:r.id,accId:r.account_id,desc:r.descricao,prazo:r.prazo,prio:r.prioridade,done:r.done,doneEm:r.done_em,criadaEm:r.criada_em});
+const rowToLog=r=>({id:r.id,accId:r.account_id,data:r.data,texto:r.texto});
+const rowToRecarga=r=>({id:r.id,accId:r.account_id,data:r.data,valor:r.valor});
+
+/* ===================== carregar tudo do banco ===================== */
+async function carregar(){
+  const [ac,me,ta,lg,rc,dm]=await Promise.all([
+    sb.from('accounts').select('*').order('codigo'),
+    sb.from('metrics').select('*'),
+    sb.from('tasks').select('*'),
+    sb.from('opt_log').select('*'),
+    sb.from('recargas').select('*'),
+    sb.from('avisos_resolvidos').select('*').eq('data',hojeISO())
+  ]);
+  if(ac.error){toast('Erro ao carregar contas: '+ac.error.message);return;}
+
+  if(!ac.data.length){
+    await semear();
+    return carregar();
+  }
+
+  contas=ac.data.map(rowToConta);
+  metricas={};
+  (me.data||[]).forEach(r=>{ const m=rowToMetric(r); (metricas[r.account_id]=metricas[r.account_id]||[]).push(m); });
+  tarefas=(ta.data||[]).map(rowToTask);
+  registros=(lg.data||[]).map(rowToLog);
+  recargas=(rc.data||[]).map(rowToRecarga);
+  resolvidos={};
+  (dm.data||[]).forEach(r=>resolvidos[r.chave]=r.data);
+  render();
+}
+
+/* ===================== semeadura inicial (só roda 1x, se o banco estiver vazio) ===================== */
+async function semear(){
+  toast('Preparando os dados iniciais...');
+  const codMap={};
+  for(const s of SEED){
+    const {codigo,...resto}=s;
+    const {data,error}=await sb.from('accounts').insert(contaToRow({...resto,codigo})).select().single();
+    if(error){console.error(error);continue;}
+    codMap[codigo]=data.id;
+  }
+  for(const cod of Object.keys(SEED_METRICS)){
+    const accId=codMap[cod];if(!accId)continue;
+    const linhas=SEED_METRICS[cod].map(r=>({account_id:accId,data:r.data,plat:r.plat,invest:r.invest,impr:r.impr,cliques:r.cliques,conv:r.conv,obs:r.obs||null}));
+    if(linhas.length)await sb.from('metrics').insert(linhas);
+  }
+  const logsRows=SEED_LOGS.filter(l=>codMap[l.cod]).map(l=>({account_id:codMap[l.cod],data:l.data,texto:l.texto}));
+  if(logsRows.length)await sb.from('opt_log').insert(logsRows);
+}
+
+/* ===================== cálculos ===================== */
+function ritmo(a){
+  const rows=(metricas[a.id]||[]).filter(r=>r.plat==='google').slice().sort((x,y)=>y.data.localeCompare(x.data)).slice(0,7);
+  if(rows.length>=2){
+    const m=rows.reduce((t,r)=>t+(r.invest||0),0)/rows.length;
+    if(m>0)return {v:m,real:true};
+  }
+  return a.verbaDiaria?{v:a.verbaDiaria,real:false}:null;
+}
+function autonomia(a){
+  const r=ritmo(a);
+  if(a.saldo==null||!r)return null;
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  let passados=0;
+  if(a.saldoData){const d=new Date(a.saldoData+'T00:00:00');passados=Math.max(0,Math.round((hoje-d)/86400000));}
+  const restante=Math.max(0,a.saldo-passados*r.v);
+  const dias=Math.floor(restante/r.v);
+  const nivel=dias<=1?'zero':dias<=3?'critico':dias<=6?'perto':'ok';
+  return {restante,dias,nivel,ritmo:r.v,ritmoReal:r.real,projetado:passados>=2};
+}
+function corNivel(n){return n==='zero'||n==='critico'?'var(--red)':n==='perto'?'var(--amber)':'var(--green)';}
+function tempoDeConta(a){
+  if(!a.inicio)return '';
+  const dias=Math.round((new Date()-new Date(a.inicio+'T00:00:00'))/86400000);
+  if(dias<1)return 'começou hoje';
+  if(dias<30)return `há ${dias} dias`;
+  const m=Math.floor(dias/30);
+  return `há ${m} ${m===1?'mês':'meses'}`;
+}
+function resumo7(a,plat){
+  const corte=new Date();corte.setDate(corte.getDate()-7);
+  const ci=corte.toISOString().slice(0,10);
+  let rows=(metricas[a.id]||[]).filter(r=>r.data>=ci);
+  if(plat)rows=rows.filter(r=>r.plat===plat);
+  if(!rows.length)return null;
+  const t=rows.reduce((s,r)=>({i:s.i+r.invest,c:s.c+(r.conv||0)}),{i:0,c:0});
+  return {invest:t.i,conv:t.c,cpa:t.c>0?t.i/t.c:null,dias:rows.length};
+}
+function corCPA(cpa,alvo){
+  if(cpa==null)return 'var(--faint)';
+  const a=alvo||40;
+  return cpa>a*1.5?'var(--red)':cpa>a?'var(--amber)':'var(--green)';
+}
+
+/* ===================== avisos (marcar OK persiste no banco, expira à meia-noite) ===================== */
+async function marcarResolvido(chave){
+  resolvidos[chave]=hojeISO();
+  await sb.from('avisos_resolvidos').upsert({chave,data:hojeISO()});
+  render();
+}
+function itemAviso(chave,classe,html){
+  if(resolvidos[chave])return '';
+  return `<div class="notice ${classe}"><span class="dot"></span><span style="flex:1;">${html}</span><button class="btn btn-ghost btn-sm" data-ok="${chave}" style="flex-shrink:0;">OK</button></div>`;
+}
+function renderAvisos(){
+  const el=$('notices');let h='';
+  contas.filter(a=>a.status==='critico').forEach(a=>{
+    h+=itemAviso('crit-'+a.id,'n-red',`<b>${esc(a.cliente)}</b> · ${esc(a.acao)||'sem ação definida'}`);
+  });
+  contas.filter(a=>a.forma==='pix').forEach(a=>{
+    const r=autonomia(a);if(!r)return;
+    if(r.nivel==='zero'||r.nivel==='critico'){
+      const q=r.dias<=0?'já zerou':(r.dias===1?'zera amanhã':`zera em ${r.dias} dias`);
+      h+=itemAviso('pix-'+a.id,'n-red',`Pix pendente em <b>${esc(a.cliente)}</b> · saldo de R$ ${brl(r.restante)}, ${q}${a.valorPgto?`. Recarga usual R$ ${brl(a.valorPgto)}`:''}`);
+    } else if(r.nivel==='perto'){
+      h+=itemAviso('pixperto-'+a.id,'n-amber',`<b>${esc(a.cliente)}</b> · R$ ${brl(r.restante)} de saldo, dá pra mais ${r.dias} dias`);
+    }
+  });
+  el.innerHTML=h;
+  el.querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>{marcarResolvido(b.dataset.ok);toast('Marcado como visto por hoje');});
+}
+
+function renderKpis(){
+  const ativas=contas.filter(a=>a.status!=='standby').length;
+  const verba=contas.filter(a=>a.verbaDiaria).reduce((s,a)=>s+a.verbaDiaria,0);
+  const criticas=contas.filter(a=>a.status==='critico').length;
+  const pix=contas.filter(a=>{const r=autonomia(a);return a.forma==='pix'&&r&&r.dias<=3;}).length;
+  const pend=tarefas.filter(t=>!t.done);
+  const atrasadas=pend.filter(t=>t.prazo&&t.prazo<hojeISO()).length;
+  const hoje=pend.filter(t=>t.prazo===hojeISO()).length;
+  const items=[
+    {v:ativas,l:'contas ativas'},
+    {v:'R$ '+Math.round(verba),l:'verba diária somada'},
+    {v:criticas,l:'contas críticas',al:criticas>0},
+    {v:pix,l:'pix a enviar',al:pix>0},
+    {v:atrasadas,l:'tarefas atrasadas',al:atrasadas>0},
+    {v:hoje,l:'tarefas pra hoje'}
+  ];
+  $('kpis').innerHTML=items.map(k=>`<div class="kpi${k.al?' alerta':''}"><div class="v num">${k.v}</div><div class="l">${k.l}</div></div>`).join('');
+  const n=atrasadas+hoje;
+  const c=$('taskCount');
+  if(n){c.style.display='inline-block';c.textContent=n;}else c.style.display='none';
+}
+
+function renderRadar(){
+  const hoje=hojeISO(),itens=[];
+  contas.filter(a=>a.status==='critico').forEach(a=>itens.push({k:'crit-'+a.id,c:'c-red',t:'crítico',h:`<b>${esc(a.cliente)}</b> · ${esc(a.acao)||'definir ação'}`}));
+  contas.filter(a=>a.forma==='pix').forEach(a=>{
+    const r=autonomia(a);
+    if(r&&r.dias<=6)itens.push({k:'pix-'+a.id,c:'c-amber',t:'pix',h:`<b>${esc(a.cliente)}</b> · R$ ${brl(r.restante)} em caixa, ${r.dias<=0?'zerado':'dura '+r.dias+' dias'}`});
+  });
+  tarefas.filter(t=>!t.done&&t.prazo&&t.prazo<hoje).forEach(t=>{
+    const c=contas.find(a=>a.id===t.accId);
+    itens.push({k:'atraso-'+t.id,c:'c-red',t:'atrasada',h:`${esc(t.desc)}${c?' · <b>'+esc(c.cliente)+'</b>':''} · era pra ${dBR(t.prazo)}`});
+  });
+  tarefas.filter(t=>!t.done&&t.prazo===hoje).forEach(t=>{
+    const c=contas.find(a=>a.id===t.accId);
+    itens.push({k:'hoje-'+t.id,c:'c-blue',t:'hoje',h:`${esc(t.desc)}${c?' · <b>'+esc(c.cliente)+'</b>':''}`});
+  });
+  contas.filter(a=>a.status==='atencao'&&a.prioridade==='alta').forEach(a=>itens.push({k:'atencao-'+a.id,c:'c-gray',t:'atenção',h:`<b>${esc(a.cliente)}</b> · ${esc(a.acao)}`}));
+  const visiveis=itens.filter(i=>!resolvidos[i.k]);
+  $('radar').innerHTML=visiveis.length
+    ? visiveis.map(i=>`<div class="radar-row"><span class="chip ${i.c}">${i.t}</span><span style="flex:1;">${i.h}</span><button class="btn btn-ghost btn-sm" data-ok="${i.k}">OK</button></div>`).join('')
+    : '<div class="empty">Nada urgente no radar.</div>';
+  $('radar').querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>{marcarResolvido(b.dataset.ok);toast('Marcado como visto por hoje');});
+}
+
+/* ===================== contas ===================== */
+function contasFiltradas(){
+  const q=$('busca').value.trim().toLowerCase();
+  return contas.filter(a=>{
+    if(filtroPlat!=='todas'&&!a.plataformas.includes(filtroPlat))return false;
+    if(filtroCart!=='todas'&&a.carteira!==filtroCart)return false;
+    if(q&&!((a.cliente+' '+(a.nicho||'')+' '+(a.notas||'')+' '+(a.acao||'')).toLowerCase().includes(q)))return false;
+    return true;
+  });
+}
+function spark(vals,cor){
+  if(!vals||vals.length<2)return '';
+  const w=150,h=34,max=Math.max(...vals),min=Math.min(...vals),amp=(max-min)||1;
+  const pts=vals.map((v,i)=>`${(i/(vals.length-1)*w).toFixed(1)},${(h-4-((v-min)/amp)*(h-8)).toFixed(1)}`).join(' ');
+  return `<svg width="${w}" height="${h}" style="display:block;overflow:visible;"><polyline points="${pts}" fill="none" stroke="${cor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+function selectStatusPlat(a,plat){
+  if(!a.plataformas.includes(plat))return '';
+  const campo=plat==='google'?'statusGoogle':'statusMeta';
+  const atual=a[campo]||'sem_config';
+  const opts=Object.keys(STATUS_PLAT).map(k=>`<option value="${k}"${k===atual?' selected':''}>${STATUS_PLAT[k]}</option>`).join('');
+  return `<div class="plat-status"><span class="k">${plat==='google'?'Google':'Meta'}</span><select data-platstatus="${a.id}|${campo}">${opts}</select></div>`;
+}
+
+function renderContas(){
+  const lista=contasFiltradas(),el=$('listaContas');el.innerHTML='';
+  if(!lista.length){el.innerHTML='<div class="empty">Nenhuma conta com esse filtro.</div>';return;}
+  ORDEM.forEach(st=>{
+    const grupo=lista.filter(a=>a.status===st).sort((a,b)=>{const p={alta:0,media:1,baixa:2};return p[a.prioridade]-p[b.prioridade];});
+    if(!grupo.length)return;
+    const box=document.createElement('div');box.className='group';
+    box.innerHTML=`<div class="group-head"><span class="dot" style="background:${COR[st]}"></span><h2>${ROTULO[st]}</h2><span class="n">${grupo.length}</span></div>`;
+    grupo.forEach(a=>{
+      const r=autonomia(a);
+      const tempo=tempoDeConta(a);
+      const plats=a.plataformas.map(p=>`<span class="pill p-${p}">${p==='google'?'Google Ads':'Meta Ads'}</span>`).join('');
+      const dinheiro=[];
+      if(a.verbaDiaria)dinheiro.push(`<div><span class="k">Verba Google</span><span class="val num">R$ ${brl(a.verbaDiaria)}/dia</span></div>`);
+      if(r)dinheiro.push(`<div><span class="k">Saldo Google</span><span class="val num" style="color:${corNivel(r.nivel)}">R$ ${brl(r.restante)} · ${r.dias<=0?'zerado':r.dias+'d'}</span></div>`);
+      if(a.forma)dinheiro.push(`<div><span class="k">Pagamento</span><span class="val">${a.forma==='pix'?'Pix manual':'Cartão'}</span></div>`);
+      const rows=(metricas[a.id]||[]).slice().sort((x,y)=>x.data.localeCompare(y.data)).slice(-14);
+      const r7=resumo7(a),r7g=resumo7(a,'google'),r7m=resumo7(a,'meta');
+      const perf=r7?`<div class="money-line" style="margin-top:10px;">
+          <div><span class="k">7 dias (tudo)</span><span class="val num">R$ ${brl(r7.invest)}</span></div>
+          <div><span class="k">Conversões</span><span class="val num">${r7.conv}</span></div>
+          <div><span class="k">CPA${a.cpaAlvo?' (alvo R$'+a.cpaAlvo+')':''}</span><span class="val num" style="color:${corCPA(r7.cpa,a.cpaAlvo)}">${r7.cpa?'R$ '+brl(r7.cpa):'sem conversão'}</span></div>
+        </div>`:'';
+      const grafico=rows.length>=3?`<div style="margin-top:12px;">${spark(rows.map(x=>x.invest),'var(--blue)')}</div>`:'';
+      const opts=ORDEM.map(s=>`<option value="${s}"${s===a.status?' selected':''}>${ROTULO[s]}</option>`).join('');
+      const statusPlatRow=(a.plataformas.includes('google')||a.plataformas.includes('meta'))
+        ?`<div class="plat-status-row">${selectStatusPlat(a,'google')}${selectStatusPlat(a,'meta')}</div>`:'';
+      const resumoBits=[`<span class="k">Prioridade</span> ${a.prioridade}`];
+      if(r)resumoBits.push(`<span class="k">Saldo</span> R$ ${brl(r.restante)} (${r.dias<=0?'zerado':r.dias+'d'})`);
+      if(r7g&&r7g.cpa)resumoBits.push(`<span class="k">CPA Google</span> R$ ${brl(r7g.cpa)}`);
+      if(r7m&&r7m.invest)resumoBits.push(`<span class="k">Meta 7d</span> R$ ${brl(r7m.invest)}`);
+      const resumoLinha=`<div class="acct-summary">${esc(a.acao)||'Nada definido'}<br>${resumoBits.join(' &nbsp;·&nbsp; ')}</div>`;
+      const card=document.createElement('div');card.className='acct';card.dataset.id=a.id;
+      card.innerHTML=`
+        <div class="acct-top">
+          <button class="acct-toggle" data-toggle-card="${a.id}"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div style="flex:1;">
+            <div class="acct-name">${esc(a.cliente)}</div>
+            <div class="acct-sub">
+              <span>${a.codigo}</span>${a.praca?`<span>·</span><span>${esc(a.praca)}</span>`:''}
+              ${a.nicho?`<span>·</span><span>${esc(a.nicho)}</span>`:''}${plats}
+              ${tempo?`<span>·</span><span>${tempo}</span>`:''}
+            </div>
+            ${statusPlatRow}
+            ${resumoLinha}
+          </div>
+          <div class="acct-actions">
+            <select data-status="${a.id}">${opts}</select>
+            <button class="btn btn-ghost btn-sm" data-editar="${a.id}">Editar</button>
+          </div>
+        </div>
+        <div class="acct-body">
+          <div class="acct-block">
+            <span class="label">Próxima ação · prioridade ${a.prioridade}</span>
+            <div class="txt">${esc(a.acao)||'<span style="color:var(--faint)">Nada definido</span>'}</div>
+          </div>
+          <div class="acct-block">
+            <span class="label">Verba e performance</span>
+            ${dinheiro.length?`<div class="money-line">${dinheiro.join('')}</div>`:'<div class="txt" style="color:var(--faint)">Não configurada</div>'}
+            ${perf}${grafico}
+          </div>
+        </div>
+        ${a.notas?`<div class="acct-notas">${esc(a.notas)}</div>`:''}`;
+      box.appendChild(card);
+    });
+    el.appendChild(box);
+  });
+  el.querySelectorAll('[data-editar]').forEach(b=>b.onclick=(e)=>{e.stopPropagation();abrirConta(b.dataset.editar);});
+  el.querySelectorAll('[data-status]').forEach(sel=>{
+    sel.onclick=e=>e.stopPropagation();
+    sel.onchange=async()=>{
+      const a=contas.find(x=>x.id===sel.dataset.status);
+      a.status=sel.value;
+      await sb.from('accounts').update({status:a.status}).eq('id',a.id);
+      render();toast('Status atualizado');
+    };
+  });
+  el.querySelectorAll('[data-platstatus]').forEach(sel=>{
+    sel.onclick=e=>e.stopPropagation();
+    sel.onchange=async()=>{
+      const [id,campo]=sel.dataset.platstatus.split('|');
+      const a=contas.find(x=>x.id===id);
+      a[campo]=sel.value;
+      const col=campo==='statusGoogle'?'status_google':'status_meta';
+      await sb.from('accounts').update({[col]:sel.value}).eq('id',id);
+      toast('Status atualizado');
+    };
+  });
+  el.querySelectorAll('[data-toggle-card]').forEach(b=>b.onclick=()=>b.closest('.acct').classList.toggle('open'));
+}
+
+/* ===================== verba ===================== */
+function renderVerba(){
+  const tb=$('tbVerba');tb.innerHTML='';
+  const ord=[...contas].sort((a,b)=>{
+    const ra=autonomia(a),rb=autonomia(b);
+    if(ra&&rb)return ra.dias-rb.dias;
+    if(ra)return -1;if(rb)return 1;
+    return a.codigo.localeCompare(b.codigo);
+  });
+  ord.forEach(a=>{
+    const r=autonomia(a);
+    const forma=a.forma==='pix'?'<span class="pill p-meta">Pix</span>':a.forma==='cartao'?'<span class="pill p-google">Cartão</span>':'<span class="pill" style="background:var(--gray-soft);color:var(--gray)">Não definido</span>';
+    let saldo='<span style="color:var(--faint)">—</span>',auto='<span style="color:var(--faint)">—</span>',sit='',acao='';
+    if(r){
+      saldo=`<span class="num" style="color:${corNivel(r.nivel)};font-weight:600;">R$ ${brl(r.restante)}</span>${r.projetado?'<br><span style="font-size:11.5px;color:var(--faint)">projetado</span>':''}`;
+      auto=`<span class="num" style="color:${corNivel(r.nivel)}">${r.dias<=0?'zerado':r.dias+' dias'}</span>`;
+    } else if(a.saldo!=null){
+      saldo=`<span class="num">R$ ${brl(a.saldo)}</span>`;
+      auto='<span style="color:var(--faint);font-size:12.5px;">informar verba</span>';
+    }
+    if(a.forma==='pix'){
+      if(r&&r.dias<=3)sit='<span class="tag-status" style="background:var(--red-soft);color:var(--red)">Mandar Pix</span>';
+      else if(r&&r.dias<=6)sit='<span class="tag-status" style="background:var(--amber-soft);color:var(--amber)">Preparar</span>';
+      else if(r)sit='<span class="tag-status" style="background:var(--green-soft);color:var(--green)">Ok</span>';
+      else sit='<span style="color:var(--faint);font-size:12.5px;">informar saldo</span>';
+      acao=`<button class="btn btn-ghost btn-sm" data-pix="${a.id}">Pix feito</button>`;
+    } else if(a.forma==='cartao'){
+      sit='<span class="tag-status" style="background:var(--blue-soft);color:var(--blue)">Automático</span>';
+    } else {
+      sit='<span style="color:var(--faint);font-size:12.5px;">configurar</span>';
+    }
+    const ult=recargas.filter(x=>x.accId===a.id).sort((x,y)=>y.data.localeCompare(x.data))[0];
+    tb.insertAdjacentHTML('beforeend',`<tr>
+      <td><b>${esc(a.cliente)}</b><br><span style="font-size:12.5px;color:var(--muted)">${a.codigo}${a.contaId?' · '+esc(a.contaId):''}</span></td>
+      <td>${forma}</td>
+      <td class="t-right num">${a.verbaDiaria?'R$ '+brl(a.verbaDiaria):'—'}${r&&r.ritmoReal?`<br><span style="font-size:11.5px;color:var(--muted)">gasta R$ ${brl(r.ritmo)}</span>`:''}</td>
+      <td class="t-right">${saldo}</td>
+      <td class="t-right">${auto}</td>
+      <td class="t-right num hide-sm">${a.valorPgto?'R$ '+brl(a.valorPgto):'—'}${ult?`<br><span style="font-size:11.5px;color:var(--muted)">últ. ${dCurta(ult.data)}</span>`:''}</td>
+      <td>${sit}</td>
+      <td>${acao}</td>
+    </tr>`);
+  });
+  tb.querySelectorAll('[data-pix]').forEach(b=>b.onclick=()=>abrirPix(b.dataset.pix));
+  const ults=recargas.slice().sort((x,y)=>y.data.localeCompare(x.data)).slice(0,8);
+  $('ultimasRecargas').innerHTML=ults.length?'Últimas recargas: '+ults.map(p=>{
+    const c=contas.find(a=>a.id===p.accId);
+    return `${dCurta(p.data)} ${c?esc(c.cliente):'?'}${p.valor?' R$ '+brl(p.valor):''}`;
+  }).join(' · '):'';
+}
+
+/* ===================== selects ===================== */
+function preencherSelects(){
+  const opts=contas.map(a=>`<option value="${a.id}">${a.codigo} · ${esc(a.cliente)}</option>`).join('');
+  ['mConta','hConta','lConta'].forEach(id=>{
+    const el=$(id),atual=el.value;el.innerHTML=opts;
+    if(atual&&contas.some(a=>a.id===atual))el.value=atual;
+  });
+  const tAtual=$('tConta').value;
+  $('tConta').innerHTML='<option value="">Sem conta</option>'+opts;
+  if(tAtual)$('tConta').value=tAtual;
+  const fAtual=$('lFiltro').value;
+  $('lFiltro').innerHTML='<option value="">Todas as contas</option>'+opts;
+  if(fAtual)$('lFiltro').value=fAtual;
+}
+
+/* ===================== métricas ===================== */
+function linhasPeriodo(){
+  const id=$('hConta').value,dias=parseInt($('hPeriodo').value),plat=$('hPlat').value;
+  const corte=new Date();corte.setDate(corte.getDate()-dias);
+  const ci=corte.toISOString().slice(0,10);
+  return (metricas[id]||[]).filter(r=>(dias>=999||r.data>=ci)&&(!plat||r.plat===plat)).sort((a,b)=>b.data.localeCompare(a.data));
+}
+function renderMetricas(){
+  const rows=linhasPeriodo();
+  if(!rows.length){
+    $('stats').innerHTML='';$('charts').innerHTML='';
+    $('tabelaMetricas').innerHTML='<div class="empty">Nenhuma métrica lançada nesse período.</div>';return;
+  }
+  const t=rows.reduce((s,r)=>({i:s.i+r.invest,im:s.im+(r.impr||0),c:s.c+(r.cliques||0),cv:s.cv+(r.conv||0)}),{i:0,im:0,c:0,cv:0});
+  const cpa=t.cv>0?t.i/t.cv:null,cpc=t.c>0?t.i/t.c:null,ctr=t.im>0?t.c/t.im*100:null;
+  const contaSel=contas.find(x=>x.id===$('hConta').value)||{};
+  const corCpa=corCPA(cpa,contaSel.cpaAlvo);
+  const alvoTxt=contaSel.cpaAlvo?`CPA · alvo R$ ${contaSel.cpaAlvo}`:'CPA';
+  $('stats').innerHTML=`<div class="stats">
+    <div class="stat"><div class="v num">R$ ${brl(t.i)}</div><div class="l">investido</div></div>
+    <div class="stat"><div class="v num">${t.cv}</div><div class="l">conversões</div></div>
+    <div class="stat"><div class="v num" style="color:${corCpa}">${cpa?'R$ '+brl(cpa):'—'}</div><div class="l">${alvoTxt}</div></div>
+    <div class="stat"><div class="v num">${cpc?'R$ '+brl(cpc):'—'}</div><div class="l">CPC</div></div>
+    <div class="stat"><div class="v num">${ctr?ctr.toFixed(1)+'%':'—'}</div><div class="l">CTR</div></div>
+  </div>`;
+  const asc=rows.slice().reverse();
+  $('charts').innerHTML=asc.length>=3?`<div class="charts">
+    <div class="chart"><div class="l">Investimento por dia</div>${spark(asc.map(r=>r.invest),'var(--blue)')}</div>
+    <div class="chart"><div class="l">Conversões por dia</div>${spark(asc.map(r=>r.conv||0),'var(--green)')}</div>
+  </div>`:'';
+  let h=`<table><thead><tr><th>Data</th><th class="hide-sm">Plat.</th><th class="t-right">Invest.</th>
+    <th class="t-right hide-sm">Impr.</th><th class="t-right">Cliques</th><th class="t-right">Conv.</th>
+    <th class="t-right">CPA</th><th></th></tr></thead><tbody>`;
+  rows.slice(0,60).forEach(r=>{
+    const c=r.conv>0?'R$ '+brl(r.invest/r.conv):'—';
+    h+=`<tr title="${esc(r.obs)}"><td>${dCurta(r.data)}</td><td class="hide-sm">${r.plat==='google'?'Google':'Meta'}</td>
+      <td class="t-right num">R$ ${brl(r.invest)}</td><td class="t-right num hide-sm">${r.impr||0}</td>
+      <td class="t-right num">${r.cliques||0}</td><td class="t-right num">${r.conv||0}</td>
+      <td class="t-right num">${c}</td><td><button class="x" data-delmet="${r.id}">×</button></td></tr>`;
+  });
+  $('tabelaMetricas').innerHTML=h+'</tbody></table>';
+  const id=$('hConta').value;
+  $('tabelaMetricas').querySelectorAll('[data-delmet]').forEach(b=>b.onclick=async()=>{
+    await sb.from('metrics').delete().eq('id',b.dataset.delmet);
+    metricas[id]=(metricas[id]||[]).filter(r=>r.id!==b.dataset.delmet);
+    render();toast('Lançamento removido');
+  });
+}
+
+/* ===================== tarefas ===================== */
+function renderTarefas(){
+  const hoje=hojeISO();
+  const pend=tarefas.filter(t=>!t.done).sort((a,b)=>{
+    const pa=a.prazo||'9999',pb=b.prazo||'9999';
+    if(pa!==pb)return pa.localeCompare(pb);
+    const p={alta:0,media:1,baixa:2};return p[a.prio]-p[b.prio];
+  });
+  const feitas=tarefas.filter(t=>t.done).sort((a,b)=>(b.doneEm||'').localeCompare(a.doneEm||'')).slice(0,15);
+  const mk=t=>{
+    const c=contas.find(a=>a.id===t.accId);
+    let prazo='';
+    if(t.prazo){
+      const cls=t.prazo<hoje&&!t.done?'late':(t.prazo===hoje&&!t.done?'today':'');
+      prazo=`<span class="${cls}">${t.prazo<hoje&&!t.done?'atrasada · ':''}${dBR(t.prazo)}</span>`;
+    }
+    return `<div class="task${t.done?' done':''}">
+      <div class="check" data-toggle="${t.id}"></div>
+      <div style="flex:1;">
+        <div class="task-txt">${esc(t.desc)}</div>
+        <div class="task-meta">${c?`<span style="color:var(--blue);font-weight:600;">${esc(c.cliente)}</span>`:'<span>geral</span>'}${prazo}<span>prioridade ${t.prio}</span></div>
+      </div>
+      <button class="x" data-deltask="${t.id}">×</button>
+    </div>`;
+  };
+  $('tarefasPend').innerHTML=pend.length?pend.map(mk).join(''):'<div class="empty">Nenhuma tarefa pendente.</div>';
+  $('tarefasFeitas').innerHTML=feitas.length?feitas.map(mk).join(''):'<div class="empty">Nada concluído ainda.</div>';
+  document.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=async()=>{
+    const t=tarefas.find(k=>k.id===b.dataset.toggle);
+    t.done=!t.done;t.doneEm=t.done?hojeISO():null;
+    await sb.from('tasks').update({done:t.done,done_em:t.doneEm}).eq('id',t.id);
+    render();
+  });
+  document.querySelectorAll('[data-deltask]').forEach(b=>b.onclick=async()=>{
+    await sb.from('tasks').delete().eq('id',b.dataset.deltask);
+    tarefas=tarefas.filter(k=>k.id!==b.dataset.deltask);
+    render();toast('Tarefa removida');
+  });
+}
+
+/* ===================== registro ===================== */
+function renderLog(){
+  const f=$('lFiltro').value;
+  const lista=registros.filter(l=>!f||l.accId===f).sort((a,b)=>b.data.localeCompare(a.data)).slice(0,80);
+  $('listaLog').innerHTML=lista.length?lista.map(l=>{
+    const c=contas.find(a=>a.id===l.accId);
+    return `<div class="log-row">
+      <div class="log-meta"><span>${dBR(l.data)}</span><b>${c?esc(c.cliente):'—'}</b><button class="x" data-dellog="${l.id}">×</button></div>
+      <div>${esc(l.texto)}</div></div>`;
+  }).join(''):'<div class="empty">Nenhuma otimização registrada.</div>';
+  $('listaLog').querySelectorAll('[data-dellog]').forEach(b=>b.onclick=async()=>{
+    await sb.from('opt_log').delete().eq('id',b.dataset.dellog);
+    registros=registros.filter(k=>k.id!==b.dataset.dellog);
+    renderLog();toast('Registro removido');
+  });
+}
+
+/* ===================== IA ===================== */
+async function pedirIA(prompt){
+  const res=await fetch('/api/analyze',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({prompt})
+  });
+  if(!res.ok){
+    const t=await res.text();
+    throw new Error(t||'Falha na análise');
+  }
+  const data=await res.json();
+  return data.texto||'';
+}
+
+$('btnIaConta').onclick=async()=>{
+  const id=$('hConta').value,a=contas.find(x=>x.id===id),rows=linhasPeriodo().slice().reverse();
+  const box=$('iaConta'),txt=$('iaContaTxt');box.classList.add('show');
+  if(!rows.length){txt.textContent='Lance pelo menos um dia de métricas antes de gerar a análise.';return;}
+  $('btnIaConta').disabled=true;txt.innerHTML='<span class="pulse">Analisando os dados da conta...</span>';
+  const linhas=rows.map(r=>`${r.data} | ${r.plat} | R$${brl(r.invest)} | ${r.impr||0} impr | ${r.cliques||0} cliques | ${r.conv||0} conv${r.obs?' | '+r.obs:''}`).join('\n');
+  const hist=registros.filter(l=>l.accId===id).sort((x,y)=>y.data.localeCompare(x.data)).slice(0,8).map(l=>`${l.data}: ${l.texto}`).join('\n')||'nenhum registro';
+  const p=`Você é um analista sênior de tráfego pago (Google Ads e Meta Ads) no Brasil. Analise os dados abaixo e produza um diagnóstico curto e acionável em português do Brasil.
+
+CONTA: ${a.cliente}
+Nicho: ${a.nicho||'não informado'}
+Plataformas: ${a.plataformas.join(', ')}
+Verba diária: ${a.verbaDiaria?'R$ '+brl(a.verbaDiaria):'não informada'}
+CPA alvo: ${a.cpaAlvo?'R$ '+a.cpaAlvo:'não definido'}
+Contexto: ${a.notas||'nenhum'}
+Ação já planejada: ${a.acao||'nenhuma'}
+
+OTIMIZAÇÕES RECENTES:
+${hist}
+
+MÉTRICAS DIÁRIAS (data | plataforma | investimento | impressões | cliques | conversões):
+${linhas}
+
+Responda EXATAMENTE nesta estrutura, em texto simples, sem markdown e sem asteriscos:
+
+DIAGNÓSTICO
+(2 a 4 frases)
+
+ALERTAS
+(linhas "- "; se não houver, "- Nenhum alerta crítico no período")
+
+PRÓXIMAS AÇÕES
+(linhas "- ", 2 a 4 ações concretas em ordem de impacto)
+
+Não use travessões em nenhuma parte do texto.`;
+  try{const r=await pedirIA(p);txt.textContent=r||'A análise voltou vazia.';}
+  catch(e){txt.textContent='Análise por IA ainda não configurada nesse site (falta a chave de API no servidor).';}
+  $('btnIaConta').disabled=false;
+};
+
+$('btnIaCarteira').onclick=async()=>{
+  const box=$('iaCarteira'),txt=$('iaCarteiraTxt');box.classList.add('show');
+  $('btnIaCarteira').disabled=true;txt.innerHTML='<span class="pulse">Lendo a carteira inteira...</span>';
+  const corte=new Date();corte.setDate(corte.getDate()-7);
+  const ci=corte.toISOString().slice(0,10),hoje=hojeISO();
+  const resumo=contas.map(a=>{
+    const rows=(metricas[a.id]||[]).filter(r=>r.data>=ci);
+    const t=rows.reduce((s,r)=>({i:s.i+r.invest,c:s.c+(r.conv||0)}),{i:0,c:0});
+    const m=rows.length?` | 7d: R$${brl(t.i)}, ${t.c} conv${t.c>0?', CPA R$'+brl(t.i/t.c):''}`:' | sem métricas';
+    const r=autonomia(a);
+    return `${a.codigo} ${a.cliente} (${a.nicho||'?'}) | status ${a.status} | prio ${a.prioridade} | ${a.plataformas.join('+')}${a.verbaDiaria?' | verba R$'+brl(a.verbaDiaria)+'/dia':''}${r?' | saldo R$'+brl(r.restante)+' ('+r.dias+'d)':''} | ação: ${a.acao||'nenhuma'}${m}`;
+  }).join('\n');
+  const tp=tarefas.filter(t=>!t.done).map(t=>{
+    const c=contas.find(a=>a.id===t.accId);
+    return `${t.desc}${c?' ('+c.cliente+')':''}${t.prazo?' | prazo '+t.prazo+(t.prazo<hoje?' ATRASADA':''):''}`;
+  }).join('\n')||'nenhuma';
+  const p=`Você é o braço direito de um gestor de tráfego pago no Brasil que administra a carteira abaixo (Google Ads e Meta Ads). Faça uma leitura executiva.
+
+CONTAS:
+${resumo}
+
+TAREFAS PENDENTES:
+${tp}
+
+Responda EXATAMENTE nesta estrutura, em texto simples, sem markdown e sem asteriscos:
+
+LEITURA GERAL
+(2 a 3 frases)
+
+TOP 3 PRIORIDADES DE HOJE
+(linhas "1. ", "2. ", "3. ")
+
+RISCOS
+(linhas "- ")
+
+Não use travessões em nenhuma parte do texto.`;
+  try{const r=await pedirIA(p);txt.textContent=r||'A análise voltou vazia.';}
+  catch(e){txt.textContent='Análise por IA ainda não configurada nesse site (falta a chave de API no servidor).';}
+  $('btnIaCarteira').disabled=false;
+};
+
+/* ===================== modal conta ===================== */
+function abrirConta(id){
+  editando=id||null;
+  const a=id?contas.find(x=>x.id===id):null;
+  $('tituloConta').textContent=a?'Editar conta':'Nova conta';
+  $('fCliente').value=a?a.cliente:'';
+  $('fNicho').value=a?(a.nicho||''):'';
+  $('fContaId').value=a?(a.contaId||''):'';
+  $('fMetaContaId').value=a?(a.metaContaId||''):'';
+  $('fPraca').value=a?(a.praca||''):'';
+  $('fInicio').value=a?(a.inicio||''):'';
+  $('fCpaAlvo').value=a&&a.cpaAlvo!=null?a.cpaAlvo:'';
+  $('fCarteira').value=a?a.carteira:'Digital Xpert';
+  $('fPrio').value=a?a.prioridade:'media';
+  $('fStatus').value=a?a.status:'setup';
+  $('fAcao').value=a?(a.acao||''):'';
+  $('fNotas').value=a?(a.notas||''):'';
+  $('fGoogle').checked=a?a.plataformas.includes('google'):false;
+  $('fMeta').checked=a?a.plataformas.includes('meta'):false;
+  $('fForma').value=a?(a.forma||''):'';
+  $('fVerba').value=a&&a.verbaDiaria!=null?a.verbaDiaria:'';
+  $('fSaldo').value=a&&a.saldo!=null?a.saldo:'';
+  $('fSaldoData').value=a?(a.saldoData||''):hojeISO();
+  $('fDiaPgto').value=a&&a.diaPgto!=null?a.diaPgto:'';
+  $('fValorPgto').value=a&&a.valorPgto!=null?a.valorPgto:'';
+  $('btnExcluir').style.display=a?'inline-block':'none';
+  $('ovConta').classList.add('open');
+}
+function proximoCodigo(carteira){
+  const pre=carteira==='Digital Xpert'?'DX':'MR';
+  const ns=contas.filter(a=>a.codigo.startsWith(pre+'-')).map(a=>parseInt(a.codigo.split('-')[1])||0);
+  return pre+'-'+String((ns.length?Math.max(...ns):0)+1).padStart(2,'0');
+}
+$('btnSalvaConta').onclick=async()=>{
+  const cliente=$('fCliente').value.trim();
+  if(!cliente){toast('Informe o nome do cliente');$('fCliente').focus();return;}
+  const plats=[];
+  if($('fGoogle').checked)plats.push('google');
+  if($('fMeta').checked)plats.push('meta');
+  const n=v=>v===''?null:parseFloat(v);
+  const carteira=$('fCarteira').value;
+  const dados={
+    cliente,nicho:$('fNicho').value.trim(),contaId:$('fContaId').value.trim(),metaContaId:$('fMetaContaId').value.trim(),carteira,
+    praca:$('fPraca').value.trim(),inicio:$('fInicio').value||'',cpaAlvo:n($('fCpaAlvo').value),
+    prioridade:$('fPrio').value,status:$('fStatus').value,
+    acao:$('fAcao').value.trim(),notas:$('fNotas').value.trim(),plataformas:plats,
+    forma:$('fForma').value,verbaDiaria:n($('fVerba').value),
+    saldo:n($('fSaldo').value),saldoData:$('fSaldoData').value||'',
+    diaPgto:n($('fDiaPgto').value),valorPgto:n($('fValorPgto').value)
+  };
+  if(editando){
+    const i=contas.findIndex(a=>a.id===editando);
+    contas[i]={...contas[i],...dados};
+    await sb.from('accounts').update(contaToRow(contas[i])).eq('id',editando);
+  } else {
+    dados.codigo=proximoCodigo(carteira);
+    const {data,error}=await sb.from('accounts').insert(contaToRow(dados)).select().single();
+    if(error){toast('Erro ao salvar: '+error.message);return;}
+    contas.push(rowToConta(data));
+  }
+  $('ovConta').classList.remove('open');render();toast('Conta salva');
+};
+$('btnExcluir').onclick=()=>{
+  const a=contas.find(x=>x.id===editando);if(!a)return;
+  pedirConfirmacao('Excluir conta',`${a.cliente} e todos os lançamentos, tarefas e registros dela serão removidos.`,async()=>{
+    await sb.from('accounts').delete().eq('id',editando);
+    contas=contas.filter(x=>x.id!==editando);
+    delete metricas[editando];
+    tarefas=tarefas.filter(t=>t.accId!==editando);
+    registros=registros.filter(l=>l.accId!==editando);
+    recargas=recargas.filter(p=>p.accId!==editando);
+    $('ovConta').classList.remove('open');render();toast('Conta excluída');
+  });
+};
+$('btnCancelaConta').onclick=()=>$('ovConta').classList.remove('open');
+$('btnNova').onclick=()=>abrirConta(null);
+
+/* ===================== modal pix ===================== */
+function abrirPix(id){
+  pixAlvo=id;
+  const a=contas.find(x=>x.id===id);
+  $('pixQual').textContent=a.cliente;
+  $('pixValor').value=a.valorPgto||'';
+  $('ovPix').classList.add('open');
+  setTimeout(()=>$('pixValor').focus(),80);
+}
+function lerNum(s){
+  s=String(s).trim().replace(/^R\$\s*/,'').replace(/\s/g,'');
+  if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');
+  else s=s.replace(',','.');
+  const n=parseFloat(s);return isNaN(n)?0:n;
+}
+$('btnConfirmaPix').onclick=async()=>{
+  const a=contas.find(x=>x.id===pixAlvo);if(!a)return;
+  const v=lerNum($('pixValor').value);
+  if(!v){toast('Informe o valor enviado');return;}
+  const r=autonomia(a);
+  a.saldo=(r?r.restante:(a.saldo||0))+v;
+  a.saldoData=hojeISO();a.valorPgto=v;
+  await sb.from('accounts').update({saldo:a.saldo,saldo_data:a.saldoData,valor_pgto:a.valorPgto}).eq('id',a.id);
+  const {data}=await sb.from('recargas').insert({account_id:a.id,data:hojeISO(),valor:v}).select().single();
+  recargas.push(rowToRecarga(data));
+  $('ovPix').classList.remove('open');render();toast(`R$ ${brl(v)} somados ao saldo de ${a.cliente}`);
+};
+$('btnCancelaPix').onclick=()=>$('ovPix').classList.remove('open');
+
+/* ===================== lançar métricas ===================== */
+$('btnLancar').onclick=async()=>{
+  const id=$('mConta').value,data=$('mData').value,invest=parseFloat($('mInvest').value);
+  if(!id||!data||isNaN(invest)){toast('Preencha conta, data e investimento');return;}
+  const row={account_id:id,data,plat:$('mPlat').value,invest,
+    impr:parseInt($('mImpr').value)||0,cliques:parseInt($('mCliques').value)||0,
+    conv:parseFloat($('mConv').value)||0,obs:$('mObs').value.trim()||null};
+  const {data:novo,error}=await sb.from('metrics').insert(row).select().single();
+  if(error){toast('Erro ao lançar: '+error.message);return;}
+  if(!metricas[id])metricas[id]=[];
+  metricas[id].push(rowToMetric(novo));
+  ['mInvest','mImpr','mCliques','mConv','mObs'].forEach(x=>$(x).value='');
+  $('hConta').value=id;render();toast('Dia lançado');
+};
+
+/* ===================== tarefas e log ===================== */
+$('btnAddTarefa').onclick=async()=>{
+  const desc=$('tDesc').value.trim();
+  if(!desc){toast('Escreva a tarefa');$('tDesc').focus();return;}
+  const row={account_id:$('tConta').value||null,descricao:desc,prazo:$('tPrazo').value||null,prioridade:$('tPrio').value,done:false,criada_em:hojeISO()};
+  const {data,error}=await sb.from('tasks').insert(row).select().single();
+  if(error){toast('Erro: '+error.message);return;}
+  tarefas.push(rowToTask(data));
+  $('tDesc').value='';$('tPrazo').value='';
+  render();toast('Tarefa adicionada');
+};
+$('btnAddLog').onclick=async()=>{
+  const texto=$('lTexto').value.trim();
+  if(!texto){toast('Descreva o que foi feito');$('lTexto').focus();return;}
+  const row={account_id:$('lConta').value,data:$('lData').value||hojeISO(),texto};
+  const {data,error}=await sb.from('opt_log').insert(row).select().single();
+  if(error){toast('Erro: '+error.message);return;}
+  registros.push(rowToLog(data));
+  $('lTexto').value='';renderLog();toast('Otimização registrada');
+};
+
+/* ===================== confirmação ===================== */
+$('btnConfSim').onclick=()=>{
+  const fn=confirmaFn;confirmaFn=null;
+  $('ovConfirma').classList.remove('open');
+  if(fn)fn();
+};
+$('btnConfNao').onclick=()=>{confirmaFn=null;$('ovConfirma').classList.remove('open');};
+
+/* ===================== navegação e filtros ===================== */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  ['dash','contas','verba','metricas','tarefas','log'].forEach(n=>{ $('v-'+n).hidden=(t.dataset.tab!==n); });
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+$('fPlat').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  $('fPlat').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');filtroPlat=b.dataset.v;renderContas();
+});
+$('fCart').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  $('fCart').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');filtroCart=b.dataset.v;renderContas();
+});
+$('busca').oninput=renderContas;
+$('hConta').onchange=()=>{$('iaConta').classList.remove('show');renderMetricas();};
+$('hPeriodo').onchange=renderMetricas;
+$('hPlat').onchange=renderMetricas;
+$('lFiltro').onchange=renderLog;
+document.querySelectorAll('.overlay').forEach(o=>o.onclick=e=>{ if(e.target===o){o.classList.remove('open');confirmaFn=null;} });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open')); });
+
+function render(){
+  renderAvisos();renderKpis();renderRadar();renderContas();renderVerba();
+  preencherSelects();renderMetricas();renderTarefas();renderLog();
+}
+
+/* ===================== autenticação ===================== */
+async function iniciar(){
+  $('hoje').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  $('mData').value=hojeISO();
+  $('lData').value=hojeISO();
+
+  const {data:{session}}=await sb.auth.getSession();
+  $('loadscreen').style.display='none';
+  if(session){
+    $('userEmail').textContent=session.user.email;
+    $('app').style.display='block';
+    await carregar();
+  } else {
+    $('loginWrap').style.display='flex';
+  }
+}
+$('btnLogin').onclick=async()=>{
+  const email=$('loginEmail').value.trim(),senha=$('loginSenha').value;
+  $('loginErro').textContent='';
+  const {data,error}=await sb.auth.signInWithPassword({email,password:senha});
+  if(error){$('loginErro').textContent='Login ou senha incorretos.';return;}
+  $('loginWrap').style.display='none';
+  $('userEmail').textContent=data.user.email;
+  $('app').style.display='block';
+  await carregar();
+};
+$('loginSenha').addEventListener('keydown',e=>{if(e.key==='Enter')$('btnLogin').click();});
+$('btnLogout').onclick=async()=>{
+  await sb.auth.signOut();
+  location.reload();
+};
+
+iniciar();
+
+</script>
+</body>
+</html>
