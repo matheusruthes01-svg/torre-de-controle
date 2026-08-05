@@ -188,7 +188,45 @@ function gerar(p, prompt, esforco) {
   return gerarOpenAI(p, prompt);
 }
 
+/* Lista os modelos que a chave configurada realmente pode usar. Serve para
+   quando o provedor aposenta um nome de modelo, o que acontece com frequência
+   nos planos gratuitos: em vez de chutar nomes, dá pra perguntar. */
+async function listarModelos(p) {
+  if (p.tipo === 'gemini') {
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200',
+      { headers: { 'x-goog-api-key': p.chave } });
+    if (!r.ok) throw await erroDaResposta(r, p);
+    const j = await r.json();
+    return (j.models || [])
+      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+      .map(m => String(m.name).replace(/^models\//, ''));
+  }
+  if (p.tipo === 'anthropic') {
+    const r = await fetch('https://api.anthropic.com/v1/models?limit=100',
+      { headers: { 'x-api-key': p.chave, 'anthropic-version': '2023-06-01' } });
+    if (!r.ok) throw await erroDaResposta(r, p);
+    return ((await r.json()).data || []).map(m => m.id);
+  }
+  const r = await fetch(`${p.base.replace(/\/$/, '')}/models`,
+    { headers: { Authorization: `Bearer ${p.chave}` } });
+  if (!r.ok) throw await erroDaResposta(r, p);
+  return ((await r.json()).data || []).map(m => m.id);
+}
+
 export default async function handler(req, res) {
+  // GET /api/analyze?modelos=1 -> diagnóstico, não gera análise nenhuma
+  if (req.method === 'GET' && req.query?.modelos) {
+    const p = escolherProvedor();
+    if (!p) { res.status(503).json({ erro: 'nenhum provedor configurado' }); return; }
+    try {
+      const modelos = await listarModelos(p);
+      res.status(200).json({ provedor: p.nome, modelo_configurado: p.modelo, modelos });
+    } catch (e) {
+      res.status(502).json({ provedor: p.nome, erro: e?.message || String(e) });
+    }
+    return;
+  }
+
   if (req.method !== 'POST') {
     res.status(405).json({ erro: 'method not allowed' });
     return;
