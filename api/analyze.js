@@ -37,8 +37,10 @@ const MAX_TOKENS = 8000;
 
 // Ordem = prioridade quando houver mais de uma chave configurada.
 const PROVEDORES = [
+  // "-latest" é apelido que o Google mantém apontando para a versão corrente,
+  // então é o nome menos sujeito a ser aposentado sem aviso.
   { nome:'gemini',     envChave:['GEMINI_API_KEY','GOOGLE_API_KEY'], envModelo:'GEMINI_MODEL',
-    modelo:'gemini-2.5-flash', tipo:'gemini' },
+    modelo:'gemini-flash-latest', tipo:'gemini' },
   { nome:'groq',       envChave:['GROQ_API_KEY'], envModelo:'GROQ_MODEL',
     modelo:'llama-3.3-70b-versatile', tipo:'openai', base:'https://api.groq.com/openai/v1' },
   { nome:'openrouter', envChave:['OPENROUTER_API_KEY'], envModelo:'OPENROUTER_MODEL',
@@ -213,8 +215,40 @@ async function listarModelos(p) {
   return ((await r.json()).data || []).map(m => m.id);
 }
 
+/* Chama o modelo de verdade com um pedido mínimo. Aparecer em listarModelos()
+   não garante que a chave pode usar: modelo aposentado continua listado e só
+   falha na hora do uso. Só o teste real responde. */
+async function testarModelo(p, modelo) {
+  const inicio = Date.now();
+  try {
+    let texto = '';
+    for await (const t of gerar({ ...p, modelo }, 'Responda apenas: ok')) {
+      texto += t;
+      if (texto.length > 40) break;
+    }
+    return { modelo, ok: true, ms: Date.now() - inicio, amostra: texto.trim().slice(0, 40) };
+  } catch (e) {
+    return { modelo, ok: false, erro: (e?.message || String(e)).slice(0, 160) };
+  }
+}
+
 export default async function handler(req, res) {
-  // GET /api/analyze?modelos=1 -> diagnóstico, não gera análise nenhuma
+  // GET /api/analyze?testar=1 -> testa de fato os modelos candidatos
+  if (req.method === 'GET' && req.query?.testar) {
+    const p = escolherProvedor();
+    if (!p) { res.status(503).json({ erro: 'nenhum provedor configurado' }); return; }
+    const pedidos = String(req.query.testar);
+    const candidatos = pedidos === '1'
+      ? [...new Set([p.modelo, 'gemini-flash-latest', 'gemini-3.5-flash',
+                     'gemini-2.0-flash', 'gemini-2.5-flash-lite'])]
+      : pedidos.split(',').map(s => s.trim()).filter(Boolean);
+    const resultados = [];
+    for (const m of candidatos) resultados.push(await testarModelo(p, m));
+    res.status(200).json({ provedor: p.nome, modelo_configurado: p.modelo, resultados });
+    return;
+  }
+
+  // GET /api/analyze?modelos=1 -> lista o que a chave enxerga
   if (req.method === 'GET' && req.query?.modelos) {
     const p = escolherProvedor();
     if (!p) { res.status(503).json({ erro: 'nenhum provedor configurado' }); return; }
