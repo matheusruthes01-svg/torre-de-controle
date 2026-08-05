@@ -450,6 +450,7 @@
         <button class="btn btn-ghost btn-sm" id="btnLogout">Sair</button>
       </div>
     </div>
+    <div class="notices" id="avisoEsquema"></div>
     <div class="notices" id="notices"></div>
   </header>
 
@@ -881,6 +882,7 @@ const STATUS_PLAT={ativa:'Ativa',pausada:'Pausada',limitada:'Limitada',aprendiza
 let contas=[],metricas={},tarefas=[],registros=[],recargas=[],resolvidos={};
 let editando=null,filtroPlat='todas',filtroCart='todas',pixAlvo=null,confirmaFn=null;
 let alertas=[];        // recalculado a cada render()
+let semIndiceUnico=false;  // banco sem o índice único de métricas
 let loteValido=null;   // linhas conferidas do lançamento em lote
 
 const $=id=>document.getElementById(id);
@@ -929,6 +931,62 @@ const rowToTask=r=>({id:r.id,accId:r.account_id,desc:r.descricao,prazo:r.prazo,p
 const rowToLog=r=>({id:r.id,accId:r.account_id,data:r.data,texto:r.texto});
 const rowToRecarga=r=>({id:r.id,accId:r.account_id,data:r.data,valor:r.valor});
 
+/* ===================== compatibilidade com o banco =====================
+   O painel roda contra bancos que ainda não receberam as colunas novas do
+   schema.sql. Em vez de estourar um erro cru do Postgres na cara de quem está
+   só criando uma tarefa, ele detecta o que falta, some com o que não existe do
+   payload e avisa o que precisa ser rodado. */
+const COLUNAS_OPCIONAIS = {
+  accounts:['verba_meta','cpa_alvo_meta'],
+  tasks:['repetir']
+};
+let temColuna={},faltando=[];
+
+async function detectarEsquema(){
+  temColuna={};faltando=[];
+  const testes=[];
+  for(const [tabela,cols] of Object.entries(COLUNAS_OPCIONAIS))
+    for(const col of cols)
+      testes.push(sb.from(tabela).select(col).limit(1).then(({error})=>{
+        temColuna[tabela+'.'+col]=!error;
+        if(error)faltando.push(tabela+'.'+col);
+      }));
+  await Promise.all(testes);
+}
+
+/* Tira do objeto as colunas que este banco ainda não tem. */
+function paraBanco(tabela,row){
+  const opcionais=COLUNAS_OPCIONAIS[tabela]||[];
+  const out={};
+  for(const [k,v] of Object.entries(row)){
+    if(opcionais.includes(k)&&!temColuna[tabela+'.'+k])continue;
+    out[k]=v;
+  }
+  return out;
+}
+
+const SQL_MIGRACAO=`alter table tasks add column if not exists repetir text;
+alter table accounts add column if not exists verba_meta numeric;
+alter table accounts add column if not exists cpa_alvo_meta numeric;
+create unique index if not exists metrics_unico_idx on metrics(account_id, data, plat);`;
+
+function renderAvisoEsquema(){
+  const el=$('avisoEsquema');
+  if(!faltando.length&&!semIndiceUnico){el.innerHTML='';return;}
+  const itens=[];
+  if(faltando.length)itens.push('as colunas <b>'+faltando.join('</b>, <b>')+'</b>');
+  if(semIndiceUnico)itens.push('o índice único de métricas');
+  el.innerHTML=`<div class="notice n-amber"><span class="dot"></span><span style="flex:1;">
+    Seu banco ainda não tem ${itens.join(' e ')}. Os recursos que dependem disso
+    ficam desligados até você rodar o <b>schema.sql</b> no SQL Editor do Supabase.
+    <button class="btn-link" id="verSql">Ver o SQL</button>
+    </span></div>`;
+  $('verSql').onclick=async()=>{
+    try{await navigator.clipboard.writeText(SQL_MIGRACAO);toast('SQL copiado, cole no SQL Editor do Supabase');}
+    catch(e){prompt('Copie e rode no SQL Editor do Supabase:',SQL_MIGRACAO);}
+  };
+}
+
 /* ===================== carregar tudo do banco =====================
    O Supabase devolve no máximo 1000 linhas por consulta. Sem paginar, as
    métricas mais antigas sumiam do painel sem nenhum aviso. */
@@ -948,6 +1006,7 @@ async function paginado(tabela,montaQuery){
 
 let jaSemeou=false;
 async function carregar(){
+  await detectarEsquema();
   const [ac,me,ta,lg,rc,dm]=await Promise.all([
     paginado('accounts',q=>q.order('codigo')),
     paginado('metrics'),
@@ -1929,11 +1988,11 @@ $('btnSalvaConta').onclick=async()=>{
     const i=contas.findIndex(a=>a.id===editando);
     const antes=contas[i];
     contas[i]={...antes,...dados};
-    const {error}=await sb.from('accounts').update(contaToRow(contas[i])).eq('id',editando);
+    const {error}=await sb.from('accounts').update(paraBanco('accounts',contaToRow(contas[i]))).eq('id',editando);
     if(error){contas[i]=antes;erroToast('Erro ao salvar: '+error.message);return;}
   } else {
     dados.codigo=proximoCodigo(carteira);
-    const {data,error}=await sb.from('accounts').insert(contaToRow(dados)).select().single();
+    const {data,error}=await sb.from('accounts').insert(paraBanco('accounts',contaToRow(dados))).select().single();
     if(error){erroToast('Erro ao salvar: '+error.message);return;}
     contas.push(rowToConta(data));
   }
@@ -1988,9 +2047,20 @@ $('btnCancelaPix').onclick=()=>$('ovPix').classList.remove('open');
 /* Grava respeitando o índice único (conta+dia+plataforma): relançar o mesmo dia
    corrige o valor em vez de criar uma linha duplicada que somava em dobro. */
 async function gravarMetricas(id,rows){
-  const {data,error}=await sb.from('metrics')
+  let {data,error}=await sb.from('metrics')
     .upsert(rows,{onConflict:'account_id,data,plat'}).select();
+
+  // Banco sem o índice único não aceita ON CONFLICT. Nesse caso apaga o dia
+  // e insere de novo, que dá o mesmo resultado sem duplicar.
+  if(error&&/on conflict|constraint matching/i.test(error.message||'')){
+    semIndiceUnico=true;
+    for(const r of rows)
+      await sb.from('metrics').delete()
+        .eq('account_id',r.account_id).eq('data',r.data).eq('plat',r.plat);
+    ({data,error}=await sb.from('metrics').insert(rows).select());
+  }
   if(error)return {error};
+
   const lista=metricas[id]=metricas[id]||[];
   data.forEach(r=>{
     const novo=rowToMetric(r);
@@ -2106,8 +2176,8 @@ async function criarProxima(t){
     :t.repetir==='quinzenal'?somaDias(d,15)
     :somaMeses(d,1);
   do{prazo=avanca(prazo);}while(prazo<=hojeISO());
-  const row={account_id:t.accId||null,descricao:t.desc,prazo,prioridade:t.prio,
-    done:false,criada_em:hojeISO(),repetir:t.repetir};
+  const row=paraBanco('tasks',{account_id:t.accId||null,descricao:t.desc,prazo,prioridade:t.prio,
+    done:false,criada_em:hojeISO(),repetir:t.repetir});
   const {data,error}=await sb.from('tasks').insert(row).select().single();
   if(error){erroToast('Não consegui criar a próxima ocorrência: '+error.message);return;}
   tarefas.push(rowToTask(data));
@@ -2119,8 +2189,11 @@ $('btnAddTarefa').onclick=async()=>{
   if(!desc){toast('Escreva a tarefa');$('tDesc').focus();return;}
   const repetir=$('tRepetir').value||null;
   if(repetir&&!$('tPrazo').value){toast('Tarefa que repete precisa de um prazo');$('tPrazo').focus();return;}
-  const row={account_id:$('tConta').value||null,descricao:desc,prazo:$('tPrazo').value||null,
-    prioridade:$('tPrio').value,done:false,criada_em:hojeISO(),repetir};
+  if(repetir&&!temColuna['tasks.repetir']){
+    erroToast('Para usar tarefa recorrente, rode antes o schema.sql no Supabase (veja o aviso no topo).');return;
+  }
+  const row=paraBanco('tasks',{account_id:$('tConta').value||null,descricao:desc,prazo:$('tPrazo').value||null,
+    prioridade:$('tPrio').value,done:false,criada_em:hojeISO(),repetir});
   const {data,error}=await sb.from('tasks').insert(row).select().single();
   if(error){erroToast('Erro: '+error.message);return;}
   tarefas.push(rowToTask(data));
@@ -2209,6 +2282,7 @@ $('btnRecarregar').onclick=async()=>{
 
 function render(){
   alertas=alertasAbertos();   // uma vez só por ciclo, o motor é caro
+  renderAvisoEsquema();
   renderAvisos();renderKpis();renderRadar();renderConsolidado();
   renderContas();renderVerba();
   preencherSelects();renderMetricas();renderTarefas();renderLog();
