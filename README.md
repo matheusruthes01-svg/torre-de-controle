@@ -7,14 +7,14 @@ otimizações e análise por IA num painel só.
 ## Stack
 - Frontend: HTML/JS puro (sem build), Supabase JS via CDN
 - Backend: Supabase (Postgres + Auth)
-- IA: função serverless em `api/analyze.js`, usando o SDK da Anthropic
+- IA: função serverless em `api/analyze.js`, agnóstica de provedor
 
 ## Estrutura
 ```
 index.html        -> o painel inteiro (interface + lógica)
-api/analyze.js    -> função serverless que chama a API da Anthropic (respostas em streaming)
+api/analyze.js    -> função serverless de IA, com streaming, que aceita vários provedores
 schema.sql        -> schema do banco; pode rodar quantas vezes quiser
-package.json      -> só a dependência do SDK da Anthropic (a Vercel instala sozinha)
+package.json      -> nenhuma dependência obrigatória (só o SDK da Anthropic, opcional)
 ```
 
 ## Configuração
@@ -24,10 +24,38 @@ package.json      -> só a dependência do SDK da Anthropic (a Vercel instala so
 3. As credenciais do Supabase (Project URL + anon key) estão embutidas no topo do
    `index.html`, nas constantes `SUPABASE_URL` e `SUPABASE_ANON_KEY`. Se trocar de
    projeto Supabase, atualizar essas duas linhas.
-4. Para habilitar a análise por IA: Vercel > Settings > Environment Variables >
-   adicionar `ANTHROPIC_API_KEY`, depois fazer um redeploy.
+4. Para habilitar a análise por IA, ver a seção abaixo. **O painel funciona inteiro
+   sem isso** — só os três botões de IA ficam desativados.
 5. Para proteger o site com senha: Vercel > Settings > Deployment Protection >
    Password Protection.
+
+## Provedor de IA (opcional)
+
+A função descobre sozinha qual provedor usar pela variável de ambiente que existir.
+Configure **uma** delas em Vercel > Settings > Environment Variables e faça um
+redeploy:
+
+| Variável | Provedor | Custo | Onde pegar a chave |
+|---|---|---|---|
+| `GEMINI_API_KEY` | Google Gemini | tier gratuito | aistudio.google.com/apikey |
+| `GROQ_API_KEY` | Groq (modelos de peso aberto) | tier gratuito | console.groq.com/keys |
+| `OPENROUTER_API_KEY` | OpenRouter | grátis nos modelos `:free` | openrouter.ai/keys |
+| `ANTHROPIC_API_KEY` | Anthropic | pago | console.anthropic.com |
+
+Se houver mais de uma, vale a ordem da tabela. Para forçar uma específica, use
+`IA_PROVEDOR=groq`.
+
+Para trocar o modelo sem mexer no código, use `GEMINI_MODEL`, `GROQ_MODEL`,
+`OPENROUTER_MODEL` ou `ANTHROPIC_MODEL`. Se o modelo configurado não existir mais,
+a mensagem de erro do provedor aparece na própria tela da análise, então dá pra
+corrigir na hora.
+
+Para um serviço compatível com OpenAI que não esteja na lista (Ollama local,
+Mistral, Together, LM Studio), use as três juntas:
+`OPENAI_COMPAT_API_KEY`, `OPENAI_COMPAT_BASE_URL` e `OPENAI_COMPAT_MODEL`.
+
+Nenhum provedor exige dependência instalada, exceto a Anthropic, cujo SDK está em
+`optionalDependencies` e só é carregado se você usar essa chave.
 
 ## O que o painel faz
 
@@ -53,9 +81,10 @@ espaços, datas em `dd/mm/aaaa`, `dd/mm` e `aaaa-mm-dd`, e números em formato
 brasileiro (`R$ 1.234,56`). Relançar um dia que já existe corrige o valor em vez
 de duplicar.
 
-**Análise por IA.** Três botões: leitura da carteira inteira com as prioridades do
-dia, análise técnica de uma conta, e relatório pronto para mandar ao cliente (em
-linguagem de dono de negócio, sem jargão de mídia).
+**Análise por IA (opcional).** Três botões: leitura da carteira inteira com as
+prioridades do dia, análise técnica de uma conta, e relatório pronto para mandar ao
+cliente (em linguagem de dono de negócio, sem jargão de mídia). É um complemento:
+o radar acima é código determinístico e não gasta nada.
 
 **Tarefas recorrentes.** Tarefa marcada para repetir gera a próxima ocorrência
 sozinha ao ser concluída.
