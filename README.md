@@ -75,11 +75,27 @@ Cada alerta pode ser marcado como visto e some até o dia seguinte.
 **Autonomia de saldo.** Desconta o gasto real já lançado desde a leitura do saldo e
 só projeta pelo ritmo dos últimos 7 dias os dias que ainda não têm lançamento.
 
-**Lançamento em lote.** Cola as linhas direto do relatório do Google Ads ou do Meta,
-confere e importa vários dias de uma vez. Aceita tabulação, ponto e vírgula ou
-espaços, datas em `dd/mm/aaaa`, `dd/mm` e `aaaa-mm-dd`, e números em formato
-brasileiro (`R$ 1.234,56`). Relançar um dia que já existe corrige o valor em vez
-de duplicar.
+**Importação de relatório.** Cola o relatório exportado do Meta ou do Google Ads,
+com cabeçalho, e o painel lê os nomes das colunas sozinho — em português ou inglês.
+Aceita **várias contas e vários dias no mesmo arquivo**, que é como exportar quando
+a carteira cresce: no Meta, Relatórios de Anúncios no nível do Business Manager; no
+Google, um relatório no MCC. Em ambos, com detalhamento por dia e coluna de conta.
+
+As contas são reconhecidas pelo ID (`ID da conta`, `ID do cliente`) ou pelo nome.
+A conferência mostra um resumo por conta, não a lista crua de linhas.
+
+Detalhes que ele resolve sozinho:
+- separador por tabulação, ponto e vírgula ou vírgula, detectado automaticamente
+- campos entre aspas com vírgula dentro (nome de conta como `"Vaapty JF, MG"`)
+- linhas de título e período antes do cabeçalho (padrão do Google Ads)
+- linha de total no rodapé, ignorada
+- números em pt-BR (`1.234,56`) e en-US (`1,234.56`), porque o Meta exporta no
+  idioma da conta
+- datas em `aaaa-mm-dd`, `dd/mm/aaaa` e `dd/mm`
+
+Relançar um dia que já existe corrige o valor em vez de duplicar. Também continua
+aceitando o formato posicional sem cabeçalho:
+`data · investimento · impressões · cliques · conversões`.
 
 **Análise por IA (opcional).** Três botões: leitura da carteira inteira com as
 prioridades do dia, análise técnica de uma conta, e relatório pronto para mandar ao

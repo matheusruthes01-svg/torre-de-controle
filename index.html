@@ -561,17 +561,23 @@
         <span class="sub">cole direto do relatório</span>
       </div>
       <div class="batch-info">
-        Copie as linhas do relatório do Google Ads (ou do Meta) e cole aqui. Uma linha por dia, na ordem:
+        <b>Cole o relatório exportado do Meta ou do Google Ads, com cabeçalho.</b>
+        O painel lê os nomes das colunas sozinho, em português ou inglês, e aceita
+        <b>várias contas e vários dias no mesmo arquivo</b> — que é como você deve exportar:
+        no Meta, use Relatórios de Anúncios no nível do Business Manager; no Google, um relatório
+        no MCC. Em ambos, ative o detalhamento por <b>dia</b> e inclua a coluna de <b>conta</b>.
+        <br><br>
+        As contas são reconhecidas pelo ID (<code>ID da conta</code>, <code>ID do cliente</code>) ou pelo nome.
+        Se o arquivo não tiver coluna de conta, o painel usa a conta escolhida abaixo.
+        <br><br>
+        Também continua aceitando o formato simples sem cabeçalho:
         <code>data · investimento · impressões · cliques · conversões</code>.
-        Aceita separação por tabulação, ponto e vírgula ou dois espaços, datas em <code>dd/mm/aaaa</code>,
-        <code>dd/mm</code> ou <code>aaaa-mm-dd</code>, e números no formato brasileiro (<code>R$ 1.234,56</code>).
-        Colunas faltando no fim viram zero.
       </div>
       <div class="grid-form">
-        <label class="field" style="grid-column:span 2;"><span>Conta</span><select id="bConta"></select></label>
+        <label class="field" style="grid-column:span 2;"><span>Conta (só quando o arquivo não tiver coluna de conta)</span><select id="bConta"></select></label>
         <label class="field"><span>Plataforma</span><select id="bPlat"><option value="google">Google</option><option value="meta">Meta</option></select></label>
       </div>
-      <label class="field" style="margin-bottom:16px;"><span>Linhas coladas</span><textarea id="bTexto" class="mono" placeholder="01/08/2026&#9;98,63&#9;134&#9;19&#9;15&#10;02/08/2026&#9;116,13&#9;321&#9;12&#9;4"></textarea></label>
+      <label class="field" style="margin-bottom:16px;"><span>Relatório colado</span><textarea id="bTexto" class="mono" placeholder="Dia&#9;Nome da conta&#9;Valor usado (BRL)&#9;Impressões&#9;Cliques no link&#9;Resultados&#10;2026-08-01&#9;Fast Bacacheri&#9;26,03&#9;98&#9;6&#9;2"></textarea></label>
       <div id="bPreview"></div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
         <button class="btn btn-ghost" id="btnConferir">Conferir</button>
@@ -2084,23 +2090,32 @@ $('btnLancar').onclick=async()=>{
 
 /* ===================== lançamento em lote (colar do relatório) ===================== */
 
-/* Números no formato brasileiro. O caso chato é "1.234": ponto é milhar quando
-   agrupa de 3 em 3, senão é decimal mesmo (74.51). */
+/* Números vindos de relatório. O separador decimal é o ÚLTIMO entre vírgula e
+   ponto: "1.234,56" é pt-BR, "1,234.56" é en-US. Tratar os dois importa porque
+   o Meta exporta no idioma da conta, e ler 1.234,56 como 1,23 estragaria o
+   gasto sem dar erro nenhum. */
 function numBR(s){
   if(s==null)return NaN;
-  s=String(s).trim().replace(/^R\$\s*/i,'').replace(/%$/,'').replace(/[\s ]/g,'');
-  if(!s||s==='-'||s==='--')return 0;
-  const temV=s.includes(','),temP=s.includes('.');
-  if(temV&&temP)s=s.replace(/\./g,'').replace(',','.');
-  else if(temV)s=s.replace(',','.');
-  else if(temP&&/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');
+  s=String(s).trim()
+    .replace(/^(R\$|\$|€)\s*/i,'').replace(/\s*(BRL|USD|EUR)$/i,'')
+    .replace(/%$/,'').replace(/\s| /g,'');
+  if(!s||s==='-'||s==='--'||s==='—')return 0;
+  const v=s.lastIndexOf(','),p=s.lastIndexOf('.');
+  if(v>=0&&p>=0){
+    if(v>p)s=s.replace(/\./g,'').replace(',','.');   // 1.234,56
+    else s=s.replace(/,/g,'');                        // 1,234.56
+  } else if(v>=0){
+    // Só vírgula: exatamente 3 dígitos depois = separador de milhar (1,234).
+    s=/^\d{1,3}(,\d{3})+$/.test(s)?s.replace(/,/g,''):s.replace(',','.');
+  } else if(p>=0&&/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');
   return /^-?\d*\.?\d+$/.test(s)?parseFloat(s):NaN;
 }
+
 function dataBR(s){
   s=String(s).trim();
   let m,y,mes,dia;
-  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))){[,y,mes,dia]=m;}
-  else if((m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/))){[,dia,mes,y]=m;if(y.length===2)y='20'+y;}
+  if((m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/))){[,y,mes,dia]=m;}
+  else if((m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/))){[,dia,mes,y]=m;if(y.length===2)y='20'+y;}
   else if((m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})$/))){[,dia,mes]=m;y=String(new Date().getFullYear());}
   else return null;
   const iso=`${y}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
@@ -2108,60 +2123,251 @@ function dataBR(s){
   if(isNaN(d)||d.getMonth()+1!==+mes||d.getDate()!==+dia)return null;
   return iso;
 }
+
+/* ---------- leitura de CSV/TSV de verdade ----------
+   Relatório do Meta e do Google vem com campos entre aspas (nome de conta com
+   vírgula é comum) e com separador que muda por idioma: pt-BR usa ponto e
+   vírgula, en-US usa vírgula. Split simples quebraria os dois casos. */
+function partirCSV(texto,sep){
+  const linhas=[];let campo='',linha=[],aspas=false;
+  for(let i=0;i<texto.length;i++){
+    const c=texto[i];
+    if(aspas){
+      if(c==='"'){ if(texto[i+1]==='"'){campo+='"';i++;} else aspas=false; }
+      else campo+=c;
+    } else if(c==='"')aspas=true;
+    else if(c===sep){linha.push(campo);campo='';}
+    else if(c==='\n'){linha.push(campo);linhas.push(linha);linha=[];campo='';}
+    else if(c!=='\r')campo+=c;
+  }
+  if(campo!==''||linha.length){linha.push(campo);linhas.push(linha);}
+  return linhas.map(l=>l.map(x=>x.trim()));
+}
+function detectarSeparador(texto){
+  const amostra=texto.split(/\r?\n/).slice(0,8).join('\n');
+  let melhor='\t',score=-1;
+  for(const sep of ['\t',';',',']){
+    const linhas=partirCSV(amostra,sep).filter(l=>l.length&&l.some(Boolean));
+    if(linhas.length<1)continue;
+    const larguras=linhas.map(l=>l.length);
+    const max=Math.max(...larguras);
+    if(max<2)continue;
+    // premia separador que dá muitas colunas e largura consistente
+    const consistente=larguras.filter(w=>w===max).length/larguras.length;
+    const s=max*consistente;
+    if(s>score){score=s;melhor=sep;}
+  }
+  return melhor;
+}
+
+const semAcento=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'');
+const chave=s=>semAcento(s).toLowerCase().replace(/[^a-z0-9]/g,'');
+
+/* Apelidos de coluna do Meta e do Google, em português e inglês. A ordem
+   importa: o primeiro que casar vence. */
+const COLUNAS={
+  data:['dia','day','data','date','date_start','datastart','iniciodorelatorio','reportingstarts','semana','week','mes','month'],
+  conta:['nomedaconta','accountname','conta','account','nomedaconta','contadeanuncios','adaccountname','nomedacampanha'],
+  contaId:['iddaconta','accountid','iddocliente','customerid','idcliente','adaccountid','contaid'],
+  invest:['valorusado','amountspent','valorgasto','custo','cost','spend','gasto','investimento','valorusadobrl','amountspentbrl','valorusadousd'],
+  impr:['impressoes','impressions','impr','veiculacoes'],
+  cliques:['cliquesnolink','linkclicks','cliques','clicks','cliquestodos','clicksall','cliquenolink'],
+  conv:['resultados','results','conversoes','conversions','conv','allconversions','todasasconversoes','acoes','purchases','compras'],
+};
+function mapearColunas(cabecalho){
+  const mapa={},usadas=new Set();
+  const chaves=cabecalho.map(chave);
+  for(const [campo,apelidos] of Object.entries(COLUNAS)){
+    for(const ap of apelidos){
+      // casa exato primeiro, depois "começa com" (pra "Valor usado (BRL)")
+      let i=chaves.findIndex((c,idx)=>!usadas.has(idx)&&c===ap);
+      if(i<0)i=chaves.findIndex((c,idx)=>!usadas.has(idx)&&c.startsWith(ap));
+      if(i>=0){mapa[campo]=i;usadas.add(i);break;}
+    }
+  }
+  return mapa;
+}
+
+/* Acha a linha de cabeçalho. Relatório do Google costuma vir com 2 ou 3 linhas
+   de título e período antes dela, então não dá pra assumir a primeira. */
+function acharCabecalho(linhas){
+  for(let i=0;i<Math.min(linhas.length,15);i++){
+    const l=linhas[i];
+    if(!l||l.length<2)continue;
+    const mapa=mapearColunas(l);
+    if(mapa.data!=null&&mapa.invest!=null)return {i,mapa};
+  }
+  return null;
+}
+
+/* Casa a conta do relatório com a conta cadastrada: primeiro pelo ID (que é
+   estável), depois pelo nome normalizado. */
+function acharConta(nome,id,plat){
+  const idc=chave(id);
+  if(idc){
+    const porId=contas.find(a=>
+      (a.contaId&&chave(a.contaId)===idc)||(a.metaContaId&&chave(a.metaContaId)===idc));
+    if(porId)return porId;
+  }
+  const n=chave(nome);
+  if(!n)return null;
+  let c=contas.find(a=>chave(a.cliente)===n);
+  if(c)return c;
+  c=contas.find(a=>chave(a.cliente)&&(n.includes(chave(a.cliente))||chave(a.cliente).includes(n)));
+  return c||null;
+}
+
+/* ---------- leitura do lote ----------
+   Devolve sempre a mesma forma, venha de CSV com cabeçalho ou do formato
+   posicional simples. */
+function lerLote(){
+  const texto=$('bTexto').value;
+  if(!texto.trim())return [];
+  const plat=$('bPlat').value;
+  const sep=detectarSeparador(texto);
+  const linhas=partirCSV(texto,sep).filter(l=>l.some(x=>x!==''));
+  const cab=acharCabecalho(linhas);
+  return cab?lerComCabecalho(linhas,cab,plat):lerPosicional(texto,plat);
+}
+
+function lerComCabecalho(linhas,{i,mapa},plat){
+  const contaFixa=contas.find(a=>a.id===$('bConta').value);
+  const vistos=new Set(),out=[];
+  const pega=(l,campo)=>mapa[campo]!=null?l[mapa[campo]]:undefined;
+
+  for(let k=i+1;k<linhas.length;k++){
+    const l=linhas[k],n=k+1;
+    const cru=l.join(' | ').slice(0,80);
+    if(!l.some(x=>x!==''))continue;
+
+    const data=dataBR(pega(l,'data')||'');
+    // rodapé de total costuma ter texto no lugar da data; ignora em silêncio
+    if(!data){
+      const t=chave(pega(l,'data')||'');
+      if(/total|resumo|summary/.test(t)||!t)continue;
+      out.push({n,cru,erro:'data não reconhecida'});continue;
+    }
+    if(data>hojeISO()){out.push({n,cru,erro:'data no futuro'});continue;}
+
+    const nomeConta=pega(l,'conta'),idConta=pega(l,'contaId');
+    let conta=(nomeConta||idConta)?acharConta(nomeConta,idConta,plat):contaFixa;
+    if(!conta){
+      out.push({n,cru,erro:`conta não encontrada: ${(nomeConta||idConta||'?').slice(0,28)}`});continue;
+    }
+
+    const invest=numBR(pega(l,'invest'));
+    if(isNaN(invest)){out.push({n,cru,erro:'investimento não reconhecido'});continue;}
+    const impr=numBR(pega(l,'impr')||0),cliques=numBR(pega(l,'cliques')||0),conv=numBR(pega(l,'conv')||0);
+    if([impr,cliques,conv].some(isNaN)){out.push({n,cru,erro:'número não reconhecido'});continue;}
+
+    const dupla=conta.id+'|'+data;
+    if(vistos.has(dupla)){out.push({n,cru,erro:'conta e dia repetidos na colagem'});continue;}
+    vistos.add(dupla);
+
+    out.push({n,cru,data,accId:conta.id,conta:conta.cliente,
+      invest,impr:Math.round(impr),cliques:Math.round(cliques),conv});
+  }
+  return out;
+}
+
 function partirLinha(l){
   let p=l.split(/[\t;]|\s{2,}/).map(x=>x.trim()).filter(Boolean);
   if(p.length<2)p=l.trim().split(/\s+/);
   return p;
 }
-function lerLote(){
-  const texto=$('bTexto').value;
+function lerPosicional(texto,plat){
+  const conta=contas.find(a=>a.id===$('bConta').value);
   const vistos=new Set();
   return texto.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map((l,i)=>{
+    const n=i+1;
+    if(!conta)return {n,cru:l,erro:'escolha a conta acima'};
     const p=partirLinha(l);
     const data=dataBR(p[0]||'');
-    if(!data)return {n:i+1,cru:l,erro:'data não reconhecida'};
-    if(data>hojeISO())return {n:i+1,cru:l,erro:'data no futuro'};
-    if(vistos.has(data))return {n:i+1,cru:l,erro:'data repetida na colagem'};
+    if(!data)return {n,cru:l,erro:'data não reconhecida'};
+    if(data>hojeISO())return {n,cru:l,erro:'data no futuro'};
+    if(vistos.has(data))return {n,cru:l,erro:'data repetida na colagem'};
     const nums=p.slice(1).map(numBR);
-    if(nums.length&&nums.some(isNaN))return {n:i+1,cru:l,erro:'número não reconhecido'};
+    if(nums.length&&nums.some(isNaN))return {n,cru:l,erro:'número não reconhecido'};
     vistos.add(data);
-    return {n:i+1,cru:l,data,
+    return {n,cru:l,data,accId:conta.id,conta:conta.cliente,
       invest:nums[0]||0,impr:Math.round(nums[1]||0),
       cliques:Math.round(nums[2]||0),conv:nums[3]||0};
   });
 }
+
 function renderPreview(){
   const linhas=lerLote(),el=$('bPreview');
   if(!linhas.length){el.innerHTML='';loteValido=null;$('btnImportar').disabled=true;return;}
   const bons=linhas.filter(l=>!l.erro),ruins=linhas.filter(l=>l.erro);
-  el.innerHTML=`<div class="table-wrap"><table>
-    <thead><tr><th>#</th><th>Data</th><th class="t-right">Invest.</th><th class="t-right hide-sm">Impr.</th>
-    <th class="t-right">Cliques</th><th class="t-right">Conv.</th><th>Situação</th></tr></thead><tbody>
-    ${linhas.map(l=>l.erro
-      ? `<tr><td>${l.n}</td><td colspan="5" style="color:var(--muted);">${esc(l.cru).slice(0,70)}</td><td class="prev-erro">${l.erro}</td></tr>`
-      : `<tr><td>${l.n}</td><td>${dBR(l.data)}</td><td class="t-right num">R$ ${brl(l.invest)}</td>
-         <td class="t-right num hide-sm">${l.impr}</td><td class="t-right num">${l.cliques}</td>
-         <td class="t-right num">${l.conv}</td><td class="prev-ok">ok</td></tr>`
-    ).join('')}</tbody></table></div>
-    <div class="hint">${bons.length} linha${bons.length===1?'':'s'} pronta${bons.length===1?'':'s'}${ruins.length?` · ${ruins.length} com problema (serão ignoradas)`:''}. Dias que já existem serão sobrescritos.</div>`;
+
+  // Agrupa por conta: com 30 contas num arquivo, listar linha a linha é ilegível.
+  const porConta={};
+  bons.forEach(l=>{
+    const g=porConta[l.accId]=porConta[l.accId]||{nome:l.conta,dias:0,invest:0,conv:0,de:l.data,ate:l.data};
+    g.dias++;g.invest+=l.invest;g.conv+=l.conv;
+    if(l.data<g.de)g.de=l.data;
+    if(l.data>g.ate)g.ate=l.data;
+  });
+  const grupos=Object.values(porConta).sort((a,b)=>b.invest-a.invest);
+
+  const resumo=grupos.length?`<div class="table-wrap"><table>
+    <thead><tr><th>Conta</th><th class="t-right">Dias</th><th>Período</th>
+    <th class="t-right">Investimento</th><th class="t-right">Conv.</th></tr></thead><tbody>
+    ${grupos.map(g=>`<tr><td><b>${esc(g.nome)}</b></td><td class="t-right num">${g.dias}</td>
+      <td>${dCurta(g.de)} a ${dCurta(g.ate)}</td>
+      <td class="t-right num">R$ ${brl(g.invest)}</td>
+      <td class="t-right num">${Math.round(g.conv)}</td></tr>`).join('')}
+    </tbody></table></div>`:'';
+
+  const problemas=ruins.length?`<div class="sec-title" style="margin-top:20px;">Linhas com problema</div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>Conteúdo</th><th>Motivo</th></tr></thead><tbody>
+    ${ruins.slice(0,20).map(l=>`<tr><td>${l.n}</td>
+      <td style="color:var(--muted);">${esc(l.cru).slice(0,60)}</td>
+      <td class="prev-erro">${esc(l.erro)}</td></tr>`).join('')}
+    </tbody></table></div>
+    ${ruins.length>20?`<div class="hint">e mais ${ruins.length-20}.</div>`:''}`:'';
+
+  el.innerHTML=resumo+problemas+
+    `<div class="hint">${bons.length} lançamento${bons.length===1?'':'s'} em ${grupos.length} conta${grupos.length===1?'':'s'}`+
+    `${ruins.length?` · ${ruins.length} linha${ruins.length===1?'':'s'} com problema, que ${ruins.length===1?'será ignorada':'serão ignoradas'}`:''}.`+
+    ` Dias que já existem serão sobrescritos.</div>`;
+
   loteValido=bons;
   $('btnImportar').disabled=!bons.length;
 }
+
 $('btnConferir').onclick=renderPreview;
 $('bTexto').oninput=()=>{loteValido=null;$('btnImportar').disabled=true;};
 $('btnImportar').onclick=async()=>{
   if(!loteValido||!loteValido.length){toast('Confira as linhas primeiro');return;}
-  const id=$('bConta').value,plat=$('bPlat').value;
-  if(!id){toast('Escolha a conta');return;}
+  const plat=$('bPlat').value;
   const btn=$('btnImportar');btn.disabled=true;btn.textContent='Importando...';
-  const rows=loteValido.map(l=>({account_id:id,data:l.data,plat,invest:l.invest,
-    impr:l.impr,cliques:l.cliques,conv:l.conv,obs:null}));
-  const {error,n}=await gravarMetricas(id,rows);
-  btn.textContent='Importar';
-  if(error){erroToast('Erro ao importar: '+error.message);btn.disabled=false;return;}
+
+  // Uma gravação por conta, porque gravarMetricas atualiza o cache por conta.
+  const porConta={};
+  loteValido.forEach(l=>(porConta[l.accId]=porConta[l.accId]||[]).push(l));
+  let total=0;const falhas=[];
+  for(const [accId,linhas] of Object.entries(porConta)){
+    const rows=linhas.map(l=>({account_id:accId,data:l.data,plat,invest:l.invest,
+      impr:l.impr,cliques:l.cliques,conv:l.conv,obs:null}));
+    const {error,n}=await gravarMetricas(accId,rows);
+    if(error){
+      const c=contas.find(a=>a.id===accId);
+      falhas.push((c?c.cliente:accId)+': '+error.message);
+    } else total+=n;
+  }
+  btn.textContent='Importar';btn.disabled=false;
+
+  if(falhas.length){
+    erroToast('Falhou em '+falhas.length+' conta(s). '+falhas[0]);
+    render();return;
+  }
   $('bTexto').value='';$('bPreview').innerHTML='';loteValido=null;
-  $('hConta').value=id;render();toast(`${n} dia${n===1?'':'s'} importado${n===1?'':'s'}`);
+  const nContas=Object.keys(porConta).length;
+  render();
+  toast(`${total} lançamento${total===1?'':'s'} em ${nContas} conta${nContas===1?'':'s'}`);
 };
+
 
 /* ===================== tarefas e log ===================== */
 const REPETE={diaria:'todo dia',semanal:'toda semana',quinzenal:'a cada 15 dias',mensal:'todo mês'};
